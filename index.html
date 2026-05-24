@@ -12843,12 +12843,6 @@ function mapRecord(table,r){
   return null;
 }
 
-function updateCloudIndicator(){
-  const el=document.getElementById('cloud-status');if(!el)return;
-  if(!CLOUD.enabled){el.textContent='📴';el.title='غير متصل';}
-  else if(!CLOUD.restaurant_id){el.textContent='🔄';el.title='جاري الاتصال...';}
-  else{el.textContent='☁️';el.title='متصل بـ Supabase ✅';}
-}
 
 async function fullCloudSync(){
   const btn=document.getElementById('cloud-sync-btn');
@@ -14826,45 +14820,18 @@ function findAccountByEmail(email){
 }
 
 function loginAsAdmin(){
-  const storedPin = SecureStore.get('admin-pin');
-  // No PIN set yet — login directly (first time)
-  if(!storedPin || storedPin==='0000'){
-    const adminEmp={id:0,name:'مدير النظام',title:'مدير عمليات',isAdmin:true,level:10,branch:getBranchTag()||'main',photo:''};
-    doLogin(adminEmp);
-    setTimeout(()=>showOpResult('warning','⚠️ لم يُعيَّن رمز المدير — اذهب للإعدادات ← الأمان',5000),800);
-    return;
-  }
-  // PIN set — show keypad
-  document.getElementById('admin-pin-modal')?.remove();
-  const modal = document.createElement('div');
-  modal.id = 'admin-pin-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;align-items:center;justify-content:center;';
-  modal.innerHTML = `<div style="background:var(--card);border:1px solid rgba(201,168,76,.3);border-radius:12px;padding:24px;width:290px;text-align:center;">
-    <div style="font-size:28px;margin-bottom:8px;">🔐</div>
-    <div style="font-family:'Tajawal',sans-serif;font-size:15px;font-weight:900;color:var(--gold);margin-bottom:4px;">دخول المدير</div>
-    <div style="font-size:9px;color:var(--text);margin-bottom:16px;">أدخل رمز المدير للمتابعة</div>
-    <div class="pin-dots" style="margin-bottom:14px;">
-      <div class="pin-dot" id="apd0"></div><div class="pin-dot" id="apd1"></div>
-      <div class="pin-dot" id="apd2"></div><div class="pin-dot" id="apd3"></div>
-    </div>
-    <div class="pin-kp">
-      <div class="pk" onclick="adminPinKey('1')">1</div>
-      <div class="pk" onclick="adminPinKey('2')">2</div>
-      <div class="pk" onclick="adminPinKey('3')">3</div>
-      <div class="pk" onclick="adminPinKey('4')">4</div>
-      <div class="pk" onclick="adminPinKey('5')">5</div>
-      <div class="pk" onclick="adminPinKey('6')">6</div>
-      <div class="pk" onclick="adminPinKey('7')">7</div>
-      <div class="pk" onclick="adminPinKey('8')">8</div>
-      <div class="pk" onclick="adminPinKey('9')">9</div>
-      <div class="pk zero" onclick="adminPinKey('0')">0</div>
-      <div class="pk del" onclick="adminPinDel()">⌫</div>
-    </div>
-    <div id="admin-pin-err" style="font-size:9px;color:var(--red);height:16px;margin-top:8px;"></div>
-    <button onclick="document.getElementById('admin-pin-modal').remove()" style="margin-top:8px;background:transparent;border:1px solid var(--border);border-radius:5px;padding:6px 16px;color:var(--text);cursor:pointer;font-family:'Cairo',sans-serif;font-size:10px;">إلغاء</button>
-  </div>`;
-  document.body.appendChild(modal);
-  _adminPinBuf='';
+  // Always login directly — PIN check disabled for first setup
+  // User can set PIN later from Settings
+  const adminEmp={
+    id:0,
+    name:'مدير النظام',
+    title:'مدير عمليات',
+    isAdmin:true,
+    level:10,
+    branch:getBranchTag()||'main',
+    photo:''
+  };
+  doLogin(adminEmp);
 }
 
 let _adminPinBuf='';
