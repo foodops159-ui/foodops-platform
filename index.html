@@ -377,7 +377,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--white);dire
 <body>
 
 <!-- ═══ PLATFORM GATE — بوابة الوصول ═══ -->
-<div id="platform-gate" style="display:none;position:fixed;inset:0;background:#0A0805;z-index:20000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;">
+<div id="platform-gate" style="position:fixed;inset:0;background:#0A0805;z-index:20000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;">
   <div style="text-align:center;margin-bottom:28px;">
     <div style="font-family:'Tajawal',sans-serif;font-size:32px;font-weight:900;color:#C9A84C;letter-spacing:4px;">FOOD OPS</div>
     <div style="font-size:9px;letter-spacing:5px;color:#555;font-family:monospace;margin-top:4px;">RESTAURANT MANAGEMENT PLATFORM</div>
@@ -12694,23 +12694,92 @@ function runCEO(){
 // ═══════════════════════════════════════════════════
 // CFG defined above
 const CLOUD = {
-  url: 'https://biflrgyhmltyiijxwjca.supabase.co',
-  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpZmxyZ3lobWx0eWlpanh3amNhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MTkyMjgsImV4cCI6MjA5MzM5NTIyOH0.QZGX8msWCwKd-DItHXCYpck0uYkQQX1OILBmmH_R_cY',
+  url: 'https://nhuxvfaxcfqlitkenewz.supabase.co',
+  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5odXh2ZmF4Y2ZxbGl0a2VuZXd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2NjUyMzYsImV4cCI6MjA5NTI0MTIzNn0._AOYBpppVP-R-TAyab8wnNYFrcWYj5oMaEncvVstBQk',
   restaurant_id: null,
-  enabled: true
+  enabled: false,
 };
 let syncQueue={};let syncTimer=null;
 
+// ── API helper ──
+async function sbFetch(path, opts={}){
+  const res=await fetch(`${CLOUD.url}/rest/v1/${path}`,{
+    headers:{
+      'apikey':CLOUD.key,
+      'Authorization':'Bearer '+CLOUD.key,
+      'Content-Type':'application/json',
+      'Prefer': opts.prefer||'',
+      ...(opts.headers||{})
+    },
+    method: opts.method||'GET',
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+  });
+  if(!res.ok){const t=await res.text();throw new Error(t);}
+  return res.status===204?null:res.json();
+}
+
 async function initCloud(){
   try{
-    const res=await fetch(`${CLOUD.url}/rest/v1/restaurants?slug=eq.the-mind&select=id`,{
-      headers:{'apikey':CLOUD.key,'Authorization':'Bearer '+CLOUD.key,'Content-Type':'application/json'}
+    // Get restaurant by access code
+    const code=localStorage.getItem('fo-platform-unlocked-code')||'';
+    if(!code){CLOUD.enabled=false;return;}
+    const data=await sbFetch(`restaurants?access_code=eq.${encodeURIComponent(code)}&select=id,name,name_ar,type,city,currency,logo,color,plan,plan_expires,is_active`);
+    if(!data?.length){CLOUD.enabled=false;return;}
+    const r=data[0];
+    if(!r.is_active){CLOUD.enabled=false;toast('⚠️ الاشتراك غير نشط','tr');return;}
+    CLOUD.restaurant_id=r.id;
+    CLOUD.enabled=true;
+    // Apply brand from Supabase
+    if(r.name)   saveBrandKey('name',r.name);
+    if(r.name_ar)saveBrandKey('name-ar',r.name_ar);
+    if(r.type)   saveBrandKey('type',r.type);
+    if(r.city)   saveBrandKey('city',r.city);
+    if(r.currency)saveBrandKey('currency',r.currency);
+    if(r.logo)   saveBrandKey('logo',r.logo);
+    if(r.color)  saveBrandKey('color',r.color);
+    applyBrand();
+    updateCloudIndicator();
+    // Load data from cloud
+    await loadAllFromCloud();
+  }catch(e){
+    console.warn('Cloud init failed:',e.message);
+    CLOUD.enabled=false;
+  }
+}
+
+// ── Load all data from Supabase ──
+async function loadAllFromCloud(){
+  if(!CLOUD.enabled||!CLOUD.restaurant_id)return;
+  try{
+    const [revs,exps,emps,wms]=await Promise.all([
+      sbFetch(`revenues?restaurant_id=eq.${CLOUD.restaurant_id}&order=date.desc&limit=500`),
+      sbFetch(`expenses?restaurant_id=eq.${CLOUD.restaurant_id}&order=date.desc&limit=500`),
+      sbFetch(`employees?restaurant_id=eq.${CLOUD.restaurant_id}&is_active=eq.true`),
+      sbFetch(`wms_items?restaurant_id=eq.${CLOUD.restaurant_id}&is_active=eq.true`),
+    ]);
+    if(revs?.length) revenues=revs.map(r=>({...r,total:parseFloat(r.total)||0}));
+    if(exps?.length) expenses=exps.map(e=>({...e,amount:parseFloat(e.amount)||0}));
+    if(emps?.length) employees=emps;
+    if(wms?.length)  wmsItems=wms.map(i=>({...i,stock:parseFloat(i.stock)||0}));
+    saveFin('tm-revenues',revenues);
+    saveFin('tm-expenses',expenses);
+    saveHR();saveWMS();
+    console.log(`✅ Cloud loaded: ${revs?.length||0} revenues, ${emps?.length||0} employees`);
+  }catch(e){console.warn('Load from cloud failed:',e.message);}
+}
+
+// ── Save to Supabase ──
+async function saveToCloud(table,rows){
+  if(!CLOUD.enabled||!CLOUD.restaurant_id)return;
+  try{
+    const data=rows.map(r=>({...r,restaurant_id:CLOUD.restaurant_id}));
+    await sbFetch(table,{
+      method:'POST',
+      body:data,
+      prefer:'resolution=merge-duplicates',
+      headers:{'Prefer':'resolution=merge-duplicates,return=minimal'}
     });
-    if(!res.ok){CLOUD.enabled=false;return;}
-    const data=await res.json();
-    if(data&&data[0])CLOUD.restaurant_id=data[0].id;
-    else CLOUD.enabled=false;
-  }catch(e){CLOUD.enabled=false;}
+  }catch(e){console.warn(`Cloud save ${table} failed:`,e.message);}
 }
 
 function cloudSync(table,data){
@@ -12724,9 +12793,19 @@ async function flushSyncQueue(){
   const tables=Object.keys(syncQueue);
   for(const table of tables){
     const data=syncQueue[table];delete syncQueue[table];
-    await syncTableToCloud(table,data);
+    await saveToCloud(table,Array.isArray(data)?data:[data]);
   }
 }
+
+function updateCloudIndicator(){
+  const el=document.getElementById('cloud-indicator');
+  if(!el)return;
+  el.innerHTML=CLOUD.enabled
+    ?`<span style="color:var(--green);font-size:9px;">☁️ متصل</span>`
+    :`<span style="color:var(--muted);font-size:9px;">💾 محلي</span>`;
+}
+
+
 
 async function syncTableToCloud(table,data){
   if(!data||!CLOUD.restaurant_id)return;
@@ -20046,11 +20125,23 @@ function checkPlatformGate(){
   const errEl=document.getElementById('platform-gate-error');
   if(PLATFORM_CODES.includes(code)){
     localStorage.setItem('fo-platform-unlocked','1');
+    localStorage.setItem('fo-platform-unlocked-code',code);
     const gate=document.getElementById('platform-gate');
-    if(gate){gate.style.opacity='0';gate.style.transition='opacity .3s';setTimeout(()=>{gate.style.display='none';startApp();},300);}
+    if(gate){
+      gate.style.opacity='0';
+      gate.style.transition='opacity .3s';
+      setTimeout(()=>{
+        gate.style.display='none';
+        startApp();
+      },300);
+    }
   } else {
     if(errEl)errEl.style.display='block';
-    if(input){input.value='';input.style.borderColor='#FF3B5C';setTimeout(()=>input.style.borderColor='rgba(255,255,255,.1)',1500);}
+    if(input){
+      input.value='';
+      input.style.borderColor='#FF3B5C';
+      setTimeout(()=>{input.style.borderColor='rgba(255,255,255,.1)';},1500);
+    }
     try{SoundFX.play('reject');}catch(e){}
   }
 }
@@ -28671,15 +28762,16 @@ updateRCStats();
   if(brandType) applyRestaurantTemplate(brandType);
   loadCustomTemplateData();
 
-  // ── Platform Gate — first check ──
-  if(!isPlatformUnlocked()){
-    const gate=document.getElementById('platform-gate');
-    if(gate){gate.style.display='flex';}
-    // Hide other screens
+  // ── Platform Gate ──
+  const _gate=document.getElementById('platform-gate');
+  if(isPlatformUnlocked()){
+    if(_gate)_gate.style.display='none';
+    startApp();
+  } else {
+    if(_gate)_gate.style.display='flex';
     const _ls=document.getElementById('loginScreen');if(_ls)_ls.style.display='none';
     const _ob=document.getElementById('onboarding-screen');if(_ob)_ob.style.display='none';
-  } else {
-    startApp();
+    setTimeout(()=>document.getElementById('platform-gate-input')?.focus(),400);
   }
 })();
 
