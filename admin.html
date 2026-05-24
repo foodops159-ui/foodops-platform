@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Food Ops — لوحة تحكم المنصة</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background:#0A0A0A; color:#FAF7F0; min-height:100vh; }
+
+/* GATE */
+#gate {
+  position:fixed; inset:0; background:#0A0A0A; z-index:1000;
+  display:flex; align-items:center; justify-content:center;
+}
+.gate-box {
+  width:100%; max-width:340px; padding:32px;
+  background:#161410; border:1px solid rgba(201,168,76,.25);
+  border-radius:12px; text-align:center;
+}
+.gate-logo { font-size:28px; font-weight:900; color:#C9A84C; letter-spacing:4px; margin-bottom:4px; }
+.gate-sub  { font-size:9px; color:#555; letter-spacing:4px; margin-bottom:24px; }
+.gate-input {
+  width:100%; background:rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.1);
+  border-radius:7px; padding:13px; font-size:18px; color:#FAF7F0; text-align:center;
+  letter-spacing:6px; font-family:monospace; outline:none; margin-bottom:10px;
+  transition:border-color .2s;
+}
+.gate-input:focus { border-color:#C9A84C; }
+.gate-btn {
+  width:100%; background:#C9A84C; color:#000; border:none; border-radius:7px;
+  padding:12px; font-size:14px; font-weight:900; cursor:pointer;
+}
+.gate-err { color:#FF3B5C; font-size:10px; margin-bottom:8px; display:none; }
+
+/* MAIN */
+#main { display:none; }
+.topbar {
+  background:#161410; border-bottom:1px solid rgba(201,168,76,.15);
+  padding:12px 20px; display:flex; align-items:center; justify-content:space-between;
+}
+.topbar-logo { font-size:16px; font-weight:900; color:#C9A84C; letter-spacing:3px; }
+.topbar-sub  { font-size:9px; color:#555; letter-spacing:2px; }
+
+.container { max-width:900px; margin:0 auto; padding:20px; }
+
+/* STATS */
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; margin-bottom:20px; }
+.stat-card {
+  background:#161410; border:1px solid rgba(255,255,255,.06);
+  border-radius:10px; padding:16px; text-align:center;
+}
+.stat-val { font-size:28px; font-weight:900; font-family:monospace; }
+.stat-lbl { font-size:9px; color:#666; margin-top:3px; }
+
+/* CARD */
+.card {
+  background:#161410; border:1px solid rgba(255,255,255,.06);
+  border-radius:10px; margin-bottom:14px; overflow:hidden;
+}
+.card-hdr {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:12px 16px; border-bottom:1px solid rgba(255,255,255,.06);
+}
+.card-title { font-size:13px; font-weight:700; }
+.card-body  { padding:14px 16px; }
+
+/* TABLE */
+table { width:100%; border-collapse:collapse; font-size:12px; }
+th { background:#111; padding:8px 10px; text-align:right; color:#C9A84C; font-size:10px; letter-spacing:1px; }
+td { padding:9px 10px; border-bottom:1px solid rgba(255,255,255,.04); }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:rgba(255,255,255,.02); }
+
+/* INPUTS */
+input[type=text], input[type=date], select {
+  background:rgba(0,0,0,.3); border:1px solid rgba(255,255,255,.1);
+  border-radius:6px; padding:8px 10px; font-size:12px; color:#FAF7F0;
+  font-family:'Segoe UI',Arial; outline:none; transition:border-color .2s;
+}
+input:focus, select:focus { border-color:#C9A84C; }
+
+/* BUTTONS */
+.btn { padding:7px 14px; border-radius:6px; cursor:pointer; font-size:11px; font-family:'Segoe UI',Arial; border:none; }
+.btn-gold  { background:#C9A84C; color:#000; font-weight:700; }
+.btn-red   { background:rgba(255,59,92,.15); color:#FF3B5C; border:1px solid rgba(255,59,92,.3); }
+.btn-green { background:rgba(0,212,106,.15); color:#00D46A; border:1px solid rgba(0,212,106,.3); }
+.btn-ghost { background:transparent; color:#888; border:1px solid rgba(255,255,255,.1); }
+
+/* BADGE */
+.badge {
+  font-size:9px; padding:2px 8px; border-radius:4px; font-family:monospace;
+  letter-spacing:1px; display:inline-block;
+}
+.badge-active   { background:rgba(0,212,106,.1);  color:#00D46A; }
+.badge-expired  { background:rgba(255,59,92,.1);  color:#FF3B5C; }
+.badge-inactive { background:rgba(255,255,255,.08);color:#888; }
+
+/* MODAL */
+.modal-bg {
+  position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:500;
+  display:none; align-items:center; justify-content:center; padding:20px;
+}
+.modal-bg.open { display:flex; }
+.modal-box {
+  background:#1A1510; border:1px solid rgba(201,168,76,.2);
+  border-radius:12px; padding:24px; width:100%; max-width:440px;
+}
+.modal-title { font-size:15px; font-weight:700; color:#C9A84C; margin-bottom:16px; }
+.fi { margin-bottom:12px; }
+.fi label { display:block; font-size:10px; color:#888; margin-bottom:5px; }
+.fi input, .fi select { width:100%; }
+</style>
+</head>
+<body>
+
+<!-- GATE -->
+<div id="gate">
+  <div class="gate-box">
+    <div class="gate-logo">FOOD OPS</div>
+    <div class="gate-sub">PLATFORM ADMIN</div>
+    <div class="gate-err" id="gate-err">كلمة مرور خاطئة</div>
+    <input id="gate-pwd" class="gate-input" type="password" placeholder="● ● ● ● ● ●"
+      onkeydown="if(event.key==='Enter')gateLogin()">
+    <button class="gate-btn" onclick="gateLogin()">دخول</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-logo">FOOD OPS</div>
+      <div class="topbar-sub">PLATFORM ADMIN — لوحة تحكم المنصة</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-gold" onclick="openNewClientModal()">+ عميل جديد</button>
+      <button class="btn btn-ghost" onclick="logout()">خروج</button>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- STATS -->
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <!-- CLIENTS TABLE -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">🏪 العملاء المشتركون</div>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="search-input" placeholder="بحث..." style="width:160px"
+            oninput="renderClients()">
+          <select id="filter-status" onchange="renderClients()" style="width:110px;">
+            <option value="">الكل</option>
+            <option value="active">نشط</option>
+            <option value="expired">منتهي</option>
+            <option value="inactive">غير نشط</option>
+          </select>
+        </div>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <table>
+          <thead>
+            <tr>
+              <th>المطعم</th>
+              <th>كود الوصول</th>
+              <th>الخطة</th>
+              <th>انتهاء الاشتراك</th>
+              <th>الحالة</th>
+              <th>آخر دخول</th>
+              <th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="clients-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ACTIVITY LOG -->
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">📋 سجل النشاط</div>
+        <button class="btn btn-ghost" style="font-size:10px;" onclick="clearLog()">مسح</button>
+      </div>
+      <div class="card-body" style="padding:0;max-height:220px;overflow-y:auto;" id="activity-log"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL: عميل جديد -->
+<div class="modal-bg" id="modal-new-client">
+  <div class="modal-box">
+    <div class="modal-title">➕ إضافة عميل جديد</div>
+    <div class="fi"><label>اسم المطعم / المنشأة *</label>
+      <input id="nc-name" type="text" placeholder="مثال: The Mind Café"></div>
+    <div class="fi"><label>نوع المنشأة</label>
+      <select id="nc-type">
+        <option>كافيه-ترفيه</option><option>مطعم</option><option>بيتزا</option>
+        <option>سوشي</option><option>إيطالي</option><option>وجبات سريعة</option><option>حلويات</option>
+      </select>
+    </div>
+    <div class="fi"><label>الخطة</label>
+      <select id="nc-plan">
+        <option value="monthly">شهري</option>
+        <option value="yearly">سنوي</option>
+        <option value="lifetime">مدى الحياة</option>
+        <option value="trial">تجريبي (14 يوم)</option>
+      </select>
+    </div>
+    <div class="fi"><label>تاريخ انتهاء الاشتراك</label>
+      <input id="nc-expiry" type="date"></div>
+    <div class="fi"><label>كود الوصول (أو اتركه فارغاً للتوليد التلقائي)</label>
+      <div style="display:flex;gap:6px;">
+        <input id="nc-code" type="text" placeholder="سيُولَّد تلقائياً" style="flex:1;text-transform:uppercase;">
+        <button class="btn btn-ghost" onclick="generateCode()">🎲 توليد</button>
+      </div>
+    </div>
+    <div class="fi"><label>ملاحظات</label>
+      <input id="nc-notes" type="text" placeholder="اختياري"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-gold" style="flex:1;" onclick="saveNewClient()">💾 حفظ وإرسال</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-new-client')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: تعديل عميل -->
+<div class="modal-bg" id="modal-edit-client">
+  <div class="modal-box">
+    <div class="modal-title">✏️ تعديل بيانات العميل</div>
+    <input type="hidden" id="edit-client-id">
+    <div class="fi"><label>اسم المطعم</label><input id="edit-name" type="text"></div>
+    <div class="fi"><label>كود الوصول</label>
+      <div style="display:flex;gap:6px;">
+        <input id="edit-code" type="text" style="flex:1;">
+        <button class="btn btn-ghost" onclick="document.getElementById('edit-code').value=genCode()">🎲</button>
+      </div>
+    </div>
+    <div class="fi"><label>الخطة</label>
+      <select id="edit-plan">
+        <option value="monthly">شهري</option><option value="yearly">سنوي</option>
+        <option value="lifetime">مدى الحياة</option><option value="trial">تجريبي</option>
+      </select>
+    </div>
+    <div class="fi"><label>انتهاء الاشتراك</label><input id="edit-expiry" type="date"></div>
+    <div class="fi"><label>الحالة</label>
+      <select id="edit-status">
+        <option value="active">نشط</option>
+        <option value="inactive">غير نشط</option>
+        <option value="expired">منتهي</option>
+      </select>
+    </div>
+    <div class="fi"><label>ملاحظات</label><input id="edit-notes" type="text"></div>
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <button class="btn btn-gold" style="flex:1;" onclick="saveEditClient()">💾 حفظ</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-edit-client')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// ADMIN PASSWORD — غيّره لكلمة مرور قوية
+// ══════════════════════════════════════════
+const ADMIN_PASSWORD = 'FoodOps@2026!';
+
+// ══════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════
+let clients = JSON.parse(localStorage.getItem('fo-admin-clients') || '[]');
+let activityLog = JSON.parse(localStorage.getItem('fo-admin-log') || '[]');
+
+function saveClients(){ localStorage.setItem('fo-admin-clients', JSON.stringify(clients)); }
+function saveLog(){ localStorage.setItem('fo-admin-log', JSON.stringify(activityLog.slice(-100))); }
+
+function addLog(msg){
+  activityLog.unshift({ msg, time: new Date().toLocaleString('ar-IQ'), date: new Date().toISOString() });
+  saveLog(); renderLog();
+}
+
+// ══════════════════════════════════════════
+// GATE
+// ══════════════════════════════════════════
+function gateLogin(){
+  const pwd = document.getElementById('gate-pwd').value;
+  if(pwd === ADMIN_PASSWORD){
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('main').style.display = 'block';
+    renderAll();
+    addLog('✅ دخول المدير');
+  } else {
+    document.getElementById('gate-err').style.display = 'block';
+    document.getElementById('gate-pwd').value = '';
+  }
+}
+
+function logout(){
+  document.getElementById('gate').style.display = 'flex';
+  document.getElementById('main').style.display = 'none';
+  document.getElementById('gate-pwd').value = '';
+}
+
+// ══════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════
+function renderAll(){ renderStats(); renderClients(); renderLog(); }
+
+function renderStats(){
+  const el = document.getElementById('stats-grid'); if(!el) return;
+  const total = clients.length;
+  const active = clients.filter(c => c.status === 'active').length;
+  const expired = clients.filter(c => c.status === 'expired' || isExpired(c)).length;
+  const trial = clients.filter(c => c.plan === 'trial').length;
+  const revenue = clients.filter(c => c.status === 'active' && c.plan !== 'trial').length * 50; // $50 per client estimate
+
+  el.innerHTML = [
+    { label:'إجمالي العملاء', val: total,    color:'#C9A84C' },
+    { label:'نشط الآن',       val: active,   color:'#00D46A' },
+    { label:'منتهي الاشتراك', val: expired,  color:'#FF3B5C' },
+    { label:'حسابات تجريبية', val: trial,    color:'#4D9FFF' },
+  ].map(s => `<div class="stat-card">
+    <div class="stat-val" style="color:${s.color}">${s.val}</div>
+    <div class="stat-lbl">${s.label}</div>
+  </div>`).join('');
+}
+
+function isExpired(client){
+  if(!client.expiry) return false;
+  return new Date(client.expiry) < new Date();
+}
+
+function getStatus(client){
+  if(client.status === 'inactive') return 'inactive';
+  if(isExpired(client)) return 'expired';
+  return client.status || 'active';
+}
+
+function renderClients(){
+  const tbody = document.getElementById('clients-tbody'); if(!tbody) return;
+  const search = document.getElementById('search-input')?.value?.toLowerCase() || '';
+  const filter = document.getElementById('filter-status')?.value || '';
+
+  let filtered = clients.filter(c => {
+    const matchSearch = !search || c.name.toLowerCase().includes(search) || c.code.toLowerCase().includes(search);
+    const status = getStatus(c);
+    const matchFilter = !filter || status === filter;
+    return matchSearch && matchFilter;
+  });
+
+  if(!filtered.length){
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px;color:#555;">لا توجد نتائج</td></tr>`;
+    return;
+  }
+
+  const planLabel = { monthly:'شهري', yearly:'سنوي', lifetime:'مدى الحياة', trial:'تجريبي' };
+  const statusBadge = {
+    active:   '<span class="badge badge-active">نشط</span>',
+    expired:  '<span class="badge badge-expired">منتهي</span>',
+    inactive: '<span class="badge badge-inactive">غير نشط</span>',
+  };
+
+  tbody.innerHTML = filtered.map(c => {
+    const status = getStatus(c);
+    const daysLeft = c.expiry ? Math.ceil((new Date(c.expiry) - new Date()) / 86400000) : null;
+    return `<tr>
+      <td>
+        <div style="font-weight:700;">${c.name}</div>
+        <div style="font-size:9px;color:#666;">${c.type || '—'}</div>
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <code style="background:#111;padding:3px 8px;border-radius:4px;font-size:11px;letter-spacing:2px;color:#C9A84C;">${c.code}</code>
+          <button onclick="copyCode('${c.code}')" style="background:none;border:none;cursor:pointer;color:#666;font-size:12px;" title="نسخ">📋</button>
+          <button onclick="sendWA('${c.name}','${c.code}')" style="background:none;border:none;cursor:pointer;color:#25D366;font-size:12px;" title="واتساب">💬</button>
+        </div>
+      </td>
+      <td><span style="font-size:11px;">${planLabel[c.plan] || c.plan || '—'}</span></td>
+      <td>
+        <div style="font-size:11px;">${c.expiry || '—'}</div>
+        ${daysLeft !== null ? `<div style="font-size:9px;color:${daysLeft < 7 ? '#FF3B5C' : daysLeft < 30 ? '#FFD700' : '#666'};">${daysLeft > 0 ? daysLeft + ' يوم متبقي' : 'منتهي'}</div>` : ''}
+      </td>
+      <td>${statusBadge[status] || status}</td>
+      <td style="font-size:10px;color:#666;">${c.lastAccess || '—'}</td>
+      <td>
+        <div style="display:flex;gap:4px;">
+          <button class="btn" style="padding:4px 8px;font-size:10px;background:rgba(77,158,255,.1);color:#4D9FFF;border:1px solid rgba(77,158,255,.2);"
+            onclick="editClient('${c.id}')">✏️</button>
+          <button class="btn btn-red" style="padding:4px 8px;font-size:10px;"
+            onclick="toggleStatus('${c.id}')">${status === 'active' ? '⏸' : '▶'}</button>
+          <button class="btn" style="padding:4px 8px;font-size:10px;background:rgba(255,59,92,.1);color:#FF3B5C;border:1px solid rgba(255,59,92,.2);"
+            onclick="deleteClient('${c.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderLog(){
+  const el = document.getElementById('activity-log'); if(!el) return;
+  if(!activityLog.length){ el.innerHTML = '<div style="text-align:center;padding:14px;color:#555;font-size:10px;">لا يوجد نشاط</div>'; return; }
+  el.innerHTML = activityLog.slice(0,30).map(l => `
+    <div style="display:flex;gap:10px;padding:7px 14px;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px;">
+      <span style="color:#555;white-space:nowrap;font-size:9px;">${l.time}</span>
+      <span>${l.msg}</span>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// ACTIONS
+// ══════════════════════════════════════════
+function genCode(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const prefix = ['FM','FO','MN','RC'][Math.floor(Math.random()*4)];
+  let code = prefix;
+  for(let i=0; i<6; i++) code += chars[Math.floor(Math.random()*chars.length)];
+  return code;
+}
+
+function generateCode(){
+  document.getElementById('nc-code').value = genCode();
+}
+
+function openNewClientModal(){
+  document.getElementById('nc-name').value = '';
+  document.getElementById('nc-code').value = genCode();
+  const expiry = new Date(); expiry.setMonth(expiry.getMonth()+1);
+  document.getElementById('nc-expiry').value = expiry.toISOString().split('T')[0];
+  document.getElementById('nc-notes').value = '';
+  document.getElementById('modal-new-client').classList.add('open');
+}
+
+function saveNewClient(){
+  const name = document.getElementById('nc-name').value.trim();
+  const code = (document.getElementById('nc-code').value.trim() || genCode()).toUpperCase();
+  const plan = document.getElementById('nc-plan').value;
+  const expiry = document.getElementById('nc-expiry').value;
+  const type = document.getElementById('nc-type').value;
+  const notes = document.getElementById('nc-notes').value.trim();
+
+  if(!name){ alert('أدخل اسم المطعم'); return; }
+  if(clients.find(c => c.code === code)){ alert('هذا الكود مستخدم — اختر كوداً آخر'); return; }
+
+  const client = {
+    id: Date.now().toString(),
+    name, code, plan, expiry, type, notes,
+    status: 'active',
+    createdAt: new Date().toISOString().split('T')[0],
+    lastAccess: null,
+  };
+  clients.unshift(client);
+  saveClients();
+  addLog(`➕ عميل جديد: ${name} — كود: ${code}`);
+  closeModal('modal-new-client');
+  renderAll();
+
+  // Show share message
+  showShareMessage(name, code);
+}
+
+function showShareMessage(name, code){
+  const msg = `مرحباً ${name} 👋\n\nتم تفعيل اشتراككم في منصة Food Ops ✅\n\nرابط التطبيق:\nhttps://foodops159-ui.github.io/foodops-platform\n\nكود الوصول:\n${code}\n\nللدعم: foodops159@gmail.com`;
+  if(confirm('تم إنشاء العميل ✅\n\nهل تريد فتح واتساب لإرسال الكود؟')){
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+  }
+}
+
+function editClient(id){
+  const c = clients.find(x => x.id === id); if(!c) return;
+  document.getElementById('edit-client-id').value = id;
+  document.getElementById('edit-name').value = c.name;
+  document.getElementById('edit-code').value = c.code;
+  document.getElementById('edit-plan').value = c.plan || 'monthly';
+  document.getElementById('edit-expiry').value = c.expiry || '';
+  document.getElementById('edit-status').value = c.status || 'active';
+  document.getElementById('edit-notes').value = c.notes || '';
+  document.getElementById('modal-edit-client').classList.add('open');
+}
+
+function saveEditClient(){
+  const id = document.getElementById('edit-client-id').value;
+  const c = clients.find(x => x.id === id); if(!c) return;
+  const newCode = document.getElementById('edit-code').value.trim().toUpperCase();
+  // Check code not taken by another
+  if(clients.find(x => x.code === newCode && x.id !== id)){ alert('الكود مستخدم بعميل آخر'); return; }
+  c.name   = document.getElementById('edit-name').value.trim();
+  c.code   = newCode;
+  c.plan   = document.getElementById('edit-plan').value;
+  c.expiry = document.getElementById('edit-expiry').value;
+  c.status = document.getElementById('edit-status').value;
+  c.notes  = document.getElementById('edit-notes').value.trim();
+  saveClients();
+  addLog(`✏️ تعديل: ${c.name} — كود: ${c.code}`);
+  closeModal('modal-edit-client');
+  renderAll();
+}
+
+function toggleStatus(id){
+  const c = clients.find(x => x.id === id); if(!c) return;
+  const current = getStatus(c);
+  c.status = current === 'active' ? 'inactive' : 'active';
+  saveClients();
+  addLog(`${c.status === 'active' ? '▶ تفعيل' : '⏸ إيقاف'}: ${c.name}`);
+  renderAll();
+}
+
+function deleteClient(id){
+  const c = clients.find(x => x.id === id); if(!c) return;
+  if(!confirm(`حذف "${c.name}"؟ لا يمكن التراجع.`)) return;
+  clients = clients.filter(x => x.id !== id);
+  saveClients();
+  addLog(`🗑️ حذف: ${c.name}`);
+  renderAll();
+}
+
+function copyCode(code){
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = event.target;
+    btn.textContent = '✅'; setTimeout(() => btn.textContent = '📋', 1500);
+  });
+}
+
+function sendWA(name, code){
+  const msg = `مرحباً ${name} 👋\n\nكود الوصول لمنصة Food Ops:\n\n🔑 ${code}\n\nالرابط: https://foodops159-ui.github.io/foodops-platform`;
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function clearLog(){
+  if(!confirm('مسح سجل النشاط؟')) return;
+  activityLog = [];
+  saveLog(); renderLog();
+}
+
+function closeModal(id){
+  document.getElementById(id)?.classList.remove('open');
+}
+
+// Close modal on bg click
+document.querySelectorAll('.modal-bg').forEach(el => {
+  el.addEventListener('click', e => { if(e.target === el) el.classList.remove('open'); });
+});
+
+// Enter key on gate
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') document.querySelectorAll('.modal-bg.open').forEach(m => m.classList.remove('open'));
+});
+
+// ══════════════════════════════════════════
+// INIT — Add sample clients if empty
+// ══════════════════════════════════════════
+if(!clients.length){
+  clients = [{
+    id: '1', name: 'The Mind Café', code: 'THEMIND2026',
+    plan: 'yearly', type: 'كافيه-ترفيه',
+    expiry: '2027-01-01', status: 'active',
+    createdAt: new Date().toISOString().split('T')[0],
+    lastAccess: new Date().toLocaleDateString('ar-IQ'), notes: 'الحساب التأسيسي',
+  }];
+  saveClients();
+}
+</script>
+</body>
+</html>

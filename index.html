@@ -376,6 +376,30 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--white);dire
 </head>
 <body>
 
+<!-- ═══ PLATFORM GATE — بوابة الوصول ═══ -->
+<div id="platform-gate" style="display:none;position:fixed;inset:0;background:#0A0805;z-index:20000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;">
+  <div style="text-align:center;margin-bottom:28px;">
+    <div style="font-family:'Tajawal',sans-serif;font-size:32px;font-weight:900;color:#C9A84C;letter-spacing:4px;">FOOD OPS</div>
+    <div style="font-size:9px;letter-spacing:5px;color:#555;font-family:monospace;margin-top:4px;">RESTAURANT MANAGEMENT PLATFORM</div>
+  </div>
+  <div style="width:100%;max-width:340px;background:#161410;border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:24px;">
+    <div style="font-size:13px;color:#FAF7F0;margin-bottom:16px;text-align:center;">أدخل كود الوصول الخاص بمنشأتك</div>
+    <input id="platform-gate-input" type="password" placeholder="● ● ● ● ● ●"
+      maxlength="12"
+      style="width:100%;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:14px;font-family:monospace;font-size:22px;letter-spacing:8px;color:#FAF7F0;outline:none;text-align:center;box-sizing:border-box;margin-bottom:10px;"
+      onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='rgba(255,255,255,.1)'"
+      onkeydown="if(event.key==='Enter')checkPlatformGate()">
+    <div id="platform-gate-error" style="color:#FF3B5C;font-size:10px;text-align:center;margin-bottom:8px;display:none;">كود خاطئ — تواصل مع Food Ops</div>
+    <button onclick="checkPlatformGate()"
+      style="width:100%;background:#C9A84C;color:#000;border:none;border-radius:7px;padding:13px;font-family:'Cairo',sans-serif;font-weight:900;font-size:14px;cursor:pointer;">
+      دخول ←
+    </button>
+    <div style="text-align:center;margin-top:14px;font-size:9px;color:#555;">
+      للحصول على كود وصول: foodops159@gmail.com
+    </div>
+  </div>
+</div>
+
 <!-- ═══ ONBOARDING SCREEN ═══ -->
 <div id="onboarding-screen" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:10000;overflow-y:auto;">
 
@@ -6655,7 +6679,8 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--white);dire
     <div id="perms-modules-list"></div>
   </div>
 
-  <!-- BRAND SETTINGS — يظهر لأصحاب النظام فقط -->
+  <!-- BRAND SETTINGS TAB -->
+  <div id="perms-tab-brand" style="display:none;">
   <div class="card" style="margin-top:10px;border:1px solid rgba(201,168,76,.3);">
     <div class="chdr"><span class="cico">🎨</span><div class="ctit">هوية المنشأة — Brand Settings</div>
       <div class="crig"><span style="font-size:8px;color:var(--gold);font-family:var(--mono);">للمالك فقط</span></div>
@@ -6734,6 +6759,7 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--white);dire
       </div>
     </div>
   </div>
+  </div><!-- end perms-tab-brand -->
 
   <!-- ROLE EDIT MODAL -->
   <div class="mbg" id="roleEditModal">
@@ -8054,7 +8080,7 @@ function goM(id){
   if(id==='m12'){initHyg();}
   if(id==='m2'){buildCL();initTempMonitoring();}
   if(id==='m_mktg'){initMktg();}
-  if(id==='m_perms'){initPerms();}
+  if(id==='m_perms'){initPermsModule();}
   if(id==='m_intel'){initIntel();}
   if(id==='m_barcode'){barcodeTab('scan',document.querySelector('#barcode-tabs .stab'));}
   if(id==='m_esign'){esignTab('pending',document.querySelector('#esign-tabs .stab'));}
@@ -20004,6 +20030,45 @@ let _obType='مطعم';
 let _obColor='#C9A84C';
 let _obBranches=[{id:'b1',name:'الفرع الرئيسي'}];
 
+
+// ═══════════════════════════════════════════════════
+// PLATFORM GATE — بوابة الوصول
+// ═══════════════════════════════════════════════════
+const PLATFORM_CODES=['FOODOPS2026','THEMIND2026','FOODOPS','ADMIN','MINDCAFE'];
+
+function isPlatformUnlocked(){
+  return localStorage.getItem('fo-platform-unlocked')==='1';
+}
+
+function checkPlatformGate(){
+  const input=document.getElementById('platform-gate-input');
+  const code=input?.value?.trim().toUpperCase()||'';
+  const errEl=document.getElementById('platform-gate-error');
+  if(PLATFORM_CODES.includes(code)){
+    localStorage.setItem('fo-platform-unlocked','1');
+    const gate=document.getElementById('platform-gate');
+    if(gate){gate.style.opacity='0';gate.style.transition='opacity .3s';setTimeout(()=>{gate.style.display='none';startApp();},300);}
+  } else {
+    if(errEl)errEl.style.display='block';
+    if(input){input.value='';input.style.borderColor='#FF3B5C';setTimeout(()=>input.style.borderColor='rgba(255,255,255,.1)',1500);}
+    try{SoundFX.play('reject');}catch(e){}
+  }
+}
+
+function startApp(){
+  try{applyBrand();}catch(e){}
+  const brandType=localStorage.getItem('brand-type');
+  if(brandType)try{applyRestaurantTemplate(brandType);}catch(e){}
+  try{loadCustomTemplateData();}catch(e){}
+  const _ls=document.getElementById('loginScreen');if(_ls)_ls.style.display='flex';
+  const _ob=document.getElementById('onboarding-screen');if(_ob)_ob.style.display='none';
+  try{OpsNotify.init();}catch(e){}
+  try{OfflineManager.init();}catch(e){}
+  try{initRandomTasks();}catch(e){}
+  if(!isOnboardingDone()){showOnboarding();}
+  else{initLoginScreen();try{showiOSInstallHint();}catch(e){}}
+}
+
 function showOnboarding(){
   document.getElementById('onboarding-screen').style.display='block';
   const ls=document.getElementById('loginScreen');if(ls)ls.style.display='none';
@@ -27572,17 +27637,27 @@ function initPerms(){
 
 function permsTab(tab,btn){
   ['roles','employees','modules','contacts','brand','template','audit'].forEach(t=>{
-    const el=document.getElementById('perms-tab-'+t);if(el)el.style.display=t===tab?'':'none';
+    const el=document.getElementById('perms-tab-'+t);
+    if(el) el.style.display = t===tab ? '' : 'none';
   });
   document.querySelectorAll('#perms-tabs .stab').forEach(b=>b.classList.remove('active'));
-  if(btn)btn.classList.add('active');
-  if(tab==='roles')renderRolesList();
+  if(btn) btn.classList.add('active');
+  if(tab==='roles')    renderRolesList();
   if(tab==='employees')renderEmpPermsList();
-  if(tab==='modules')renderModulesList();
-  if(tab==='contacts')renderContactsForm();
-  if(tab==='brand')renderBrandSettingsForm();
-  if(tab==='template')renderTemplateEditor();
-  if(tab==='audit')renderAuditLog();
+  if(tab==='modules')  renderModulesList();
+  if(tab==='contacts') renderContactsForm();
+  if(tab==='brand')    renderBrandSettingsForm();
+  if(tab==='template') renderTemplateEditor();
+  if(tab==='audit')    renderAuditLog();
+}
+
+// Called on m_perms module open — always start on roles tab, hide others
+function initPermsModule(){
+  ['roles','employees','modules','contacts','brand','template','audit'].forEach(t=>{
+    const el=document.getElementById('perms-tab-'+t);
+    if(el) el.style.display = t==='roles' ? '' : 'none';
+  });
+  renderRolesList();
 }
 
 // ═══════════════════════════════════════════════════
@@ -28596,22 +28671,15 @@ updateRCStats();
   if(brandType) applyRestaurantTemplate(brandType);
   loadCustomTemplateData();
 
-  // ── Ensure login screen is visible before init ──
-  const _ls=document.getElementById('loginScreen');
-  if(_ls)_ls.style.display='flex';
-  const _ob=document.getElementById('onboarding-screen');
-  if(_ob)_ob.style.display='none';
-
-  try{OpsNotify.init();}catch(e){}
-  try{OfflineManager.init();}catch(e){}
-  try{initRandomTasks();}catch(e){}
-
-  // Show onboarding if first time, else login
-  if(!isOnboardingDone()){
-    showOnboarding();
+  // ── Platform Gate — first check ──
+  if(!isPlatformUnlocked()){
+    const gate=document.getElementById('platform-gate');
+    if(gate){gate.style.display='flex';}
+    // Hide other screens
+    const _ls=document.getElementById('loginScreen');if(_ls)_ls.style.display='none';
+    const _ob=document.getElementById('onboarding-screen');if(_ob)_ob.style.display='none';
   } else {
-    initLoginScreen();
-    showiOSInstallHint();
+    startApp();
   }
 })();
 
