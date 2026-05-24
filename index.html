@@ -14826,15 +14826,15 @@ function findAccountByEmail(email){
 }
 
 function loginAsAdmin(){
-  // First time (no PIN set) → direct login, prompt to set PIN
   const storedPin = SecureStore.get('admin-pin');
-  if(!storedPin){
-    const adminEmp={id:0,name:'مدير النظام',title:'مدير عمليات',isAdmin:true,branch:null,photo:''};
+  // No PIN set yet — login directly (first time)
+  if(!storedPin || storedPin==='0000'){
+    const adminEmp={id:0,name:'مدير النظام',title:'مدير عمليات',isAdmin:true,level:10,branch:getBranchTag()||'main',photo:''};
     doLogin(adminEmp);
-    setTimeout(()=>showOpResult('warning','⚠️ لم يُعيَّن رمز المدير بعد — اذهب للإعدادات ← الأمان لتعيينه',6000),800);
+    setTimeout(()=>showOpResult('warning','⚠️ لم يُعيَّن رمز المدير — اذهب للإعدادات ← الأمان',5000),800);
     return;
   }
-  // PIN set — show modal (always rebuild to ensure buttons work)
+  // PIN set — show keypad
   document.getElementById('admin-pin-modal')?.remove();
   const modal = document.createElement('div');
   modal.id = 'admin-pin-modal';
