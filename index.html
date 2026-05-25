@@ -12720,25 +12720,27 @@ async function sbFetch(path, opts={}){
 
 async function initCloud(){
   try{
-    // Get restaurant by access code
     const code=localStorage.getItem('fo-platform-unlocked-code')||'';
     if(!code){CLOUD.enabled=false;return;}
-    const data=await sbFetch(`restaurants?access_code=eq.${encodeURIComponent(code)}&select=id,name,name_ar,type,city,currency,logo,color,plan,plan_expires,is_active`);
+
+    const data=await sbFetch(`subscriptions?access_code=eq.${encodeURIComponent(code)}&select=id,restaurant_name,is_active,expires_at`);
     if(!data?.length){CLOUD.enabled=false;return;}
+
     const r=data[0];
-    if(!r.is_active){CLOUD.enabled=false;toast('⚠️ الاشتراك غير نشط','tr');return;}
+    if(!r.is_active){CLOUD.enabled=false;return;}
+    if(r.expires_at && new Date(r.expires_at)<new Date()){CLOUD.enabled=false;return;}
+
     CLOUD.restaurant_id=r.id;
     CLOUD.enabled=true;
-    // Apply brand from Supabase
-    if(r.name)   saveBrandKey('name',r.name);
-    if(r.name_ar)saveBrandKey('name-ar',r.name_ar);
-    if(r.type)   saveBrandKey('type',r.type);
-    if(r.city)   saveBrandKey('city',r.city);
-    if(r.currency)saveBrandKey('currency',r.currency);
-    if(r.logo)   saveBrandKey('logo',r.logo);
-    if(r.color)  saveBrandKey('color',r.color);
+
+    // Save restaurant_id locally
+    localStorage.setItem('fo-restaurant-id', r.id);
+
+    // Apply brand name
+    if(r.restaurant_name) saveBrandKey('name', r.restaurant_name);
     applyBrand();
     updateCloudIndicator();
+
     // Load data from cloud
     await loadAllFromCloud();
   }catch(e){
@@ -12768,7 +12770,6 @@ async function loadAllFromCloud(){
   }catch(e){console.warn('Load from cloud failed:',e.message);}
 }
 
-// ── Save to Supabase ──
 async function saveToCloud(table,rows){
   if(!CLOUD.enabled||!CLOUD.restaurant_id)return;
   try{
@@ -12776,10 +12777,30 @@ async function saveToCloud(table,rows){
     await sbFetch(table,{
       method:'POST',
       body:data,
-      prefer:'resolution=merge-duplicates',
       headers:{'Prefer':'resolution=merge-duplicates,return=minimal'}
     });
   }catch(e){console.warn(`Cloud save ${table} failed:`,e.message);}
+}
+
+async function loadAllFromCloud(){
+  if(!CLOUD.enabled||!CLOUD.restaurant_id)return;
+  try{
+    const rid=CLOUD.restaurant_id;
+    const [revs,exps,emps,wms]=await Promise.all([
+      sbFetch(`revenues?restaurant_id=eq.${rid}&order=date.desc&limit=500`),
+      sbFetch(`expenses?restaurant_id=eq.${rid}&order=date.desc&limit=500`),
+      sbFetch(`employees?restaurant_id=eq.${rid}&is_active=eq.true`),
+      sbFetch(`wms_items?restaurant_id=eq.${rid}&is_active=eq.true`),
+    ]);
+    if(revs?.length) revenues=revs.map(r=>({...r,total:parseFloat(r.total)||0}));
+    if(exps?.length) expenses=exps.map(e=>({...e,amount:parseFloat(e.amount)||0}));
+    if(emps?.length) employees=emps;
+    if(wms?.length)  wmsItems=wms.map(i=>({...i,stock:parseFloat(i.stock)||0}));
+    saveFin('tm-revenues',revenues);
+    saveFin('tm-expenses',expenses);
+    saveHR();saveWMS();
+    console.log(`✅ Cloud loaded for restaurant: ${rid}`);
+  }catch(e){console.warn('Load from cloud failed:',e.message);}
 }
 
 function cloudSync(table,data){
