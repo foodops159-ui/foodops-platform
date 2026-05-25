@@ -20086,30 +20086,70 @@ function isPlatformUnlocked(){
   return localStorage.getItem('fo-platform-unlocked')==='1';
 }
 
-function checkPlatformGate(){
+async function checkPlatformGate(){
   const input=document.getElementById('platform-gate-input');
   const code=input?.value?.trim().toUpperCase()||'';
   const errEl=document.getElementById('platform-gate-error');
-  if(PLATFORM_CODES.includes(code)){
-    localStorage.setItem('fo-platform-unlocked','1');
-    localStorage.setItem('fo-platform-unlocked-code',code);
-    const gate=document.getElementById('platform-gate');
-    if(gate){
-      gate.style.opacity='0';
-      gate.style.transition='opacity .3s';
-      setTimeout(()=>{
-        gate.style.display='none';
-        startApp();
-      },300);
+  const btn=document.querySelector('#platform-gate button');
+
+  if(!code){toast('أدخل الكود','tr');return;}
+
+  // Show loading
+  if(btn){btn.textContent='⏳ جاري التحقق...';btn.disabled=true;}
+  if(errEl)errEl.style.display='none';
+
+  try{
+    // Check in Supabase subscriptions table
+    const res=await fetch(
+      `https://nhuxvfaxcfqlitkenewz.supabase.co/rest/v1/subscriptions?access_code=eq.${encodeURIComponent(code)}&select=id,restaurant_name,is_active,expires_at`,
+      {headers:{
+        'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5odXh2ZmF4Y2ZxbGl0a2VuZXd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2NjUyMzYsImV4cCI6MjA5NTI0MTIzNn0._AOYBpppVP-R-TAyab8wnNYFrcWYj5oMaEncvVstBQk',
+        'Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5odXh2ZmF4Y2ZxbGl0a2VuZXd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2NjUyMzYsImV4cCI6MjA5NTI0MTIzNn0._AOYBpppVP-R-TAyab8wnNYFrcWYj5oMaEncvVstBQk'
+      }}
+    );
+    const data=await res.json();
+
+    if(!data||!data.length){
+      // Not in Supabase — check local fallback codes
+      if(PLATFORM_CODES.includes(code)){
+        unlockPlatform(code);return;
+      }
+      throw new Error('كود غير صحيح');
     }
-  } else {
-    if(errEl)errEl.style.display='block';
-    if(input){
-      input.value='';
-      input.style.borderColor='#FF3B5C';
-      setTimeout(()=>{input.style.borderColor='rgba(255,255,255,.1)';},1500);
+
+    const sub=data[0];
+
+    // Check active
+    if(!sub.is_active){
+      throw new Error('هذا الاشتراك موقوف — تواصل مع Food Ops');
     }
+
+    // Check expiry
+    if(sub.expires_at && new Date(sub.expires_at)<new Date()){
+      throw new Error('انتهى الاشتراك — تواصل مع Food Ops للتجديد');
+    }
+
+    // All good — unlock
+    unlockPlatform(code,sub.restaurant_name);
+
+  }catch(err){
+    if(errEl){errEl.textContent=err.message||'كود خاطئ';errEl.style.display='block';}
+    if(input){input.value='';input.style.borderColor='#FF3B5C';setTimeout(()=>input.style.borderColor='rgba(255,255,255,.1)',1500);}
     try{SoundFX.play('reject');}catch(e){}
+  }finally{
+    if(btn){btn.textContent='دخول ←';btn.disabled=false;}
+  }
+}
+
+function unlockPlatform(code,restaurantName){
+  localStorage.setItem('fo-platform-unlocked','1');
+  localStorage.setItem('fo-platform-unlocked-code',code);
+  if(restaurantName) saveBrandKey('name',restaurantName);
+  const gate=document.getElementById('platform-gate');
+  if(gate){
+    gate.style.opacity='0';
+    gate.style.transition='opacity .3s';
+    setTimeout(()=>{gate.style.display='none';startApp();},300);
   }
 }
 
