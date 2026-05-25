@@ -626,12 +626,12 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--white);dire
     <div style="position:absolute;bottom:-20%;right:-10%;width:400px;height:400px;background:radial-gradient(circle,rgba(77,158,255,.06) 0%,transparent 70%);animation:pulse 10s ease-in-out infinite reverse;"></div>
   </div>
 
-  <!-- Brand -->
+  <!-- Brand — dynamic from BRAND object -->
   <div style="text-align:center;margin-bottom:24px;">
-    <div style="font-family:'Tajawal',sans-serif;font-size:28px;font-weight:900;letter-spacing:3px;background:linear-gradient(135deg,var(--gold),#fff,var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-      THE MIND
+    <div id="ls-logo-text" style="font-family:'Tajawal',sans-serif;font-size:28px;font-weight:900;letter-spacing:3px;background:linear-gradient(135deg,var(--gold),#fff,var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+      FOOD OPS
     </div>
-    <div style="font-size:9px;letter-spacing:6px;color:var(--text);font-family:var(--mono);margin-top:3px;">OPERATIONS PLATFORM</div>
+    <div id="ls-sub-text" style="font-size:9px;letter-spacing:6px;color:var(--text);font-family:var(--mono);margin-top:3px;">OPERATIONS PLATFORM</div>
     <div style="width:40px;height:1px;background:var(--gold);margin:10px auto;opacity:.5;"></div>
     <div style="font-size:8px;color:var(--muted);letter-spacing:3px;font-family:var(--mono);">POWERED BY FOOD OPS</div>
   </div>
@@ -20118,13 +20118,34 @@ function startApp(){
   const brandType=localStorage.getItem('brand-type');
   if(brandType)try{applyRestaurantTemplate(brandType);}catch(e){}
   try{loadCustomTemplateData();}catch(e){}
+
+  // Show login screen immediately
   const _ls=document.getElementById('loginScreen');if(_ls)_ls.style.display='flex';
   const _ob=document.getElementById('onboarding-screen');if(_ob)_ob.style.display='none';
+
   try{OpsNotify.init();}catch(e){}
   try{OfflineManager.init();}catch(e){}
   try{initRandomTasks();}catch(e){}
-  if(!isOnboardingDone()){showOnboarding();}
-  else{initLoginScreen();try{showiOSInstallHint();}catch(e){}}
+
+  // Init cloud — if cloud has data, skip onboarding for new users
+  initCloud().then(()=>{
+    try{applyBrand();}catch(e){}
+    // If cloud connected and brand loaded → mark onboarding done
+    if(CLOUD.enabled && CLOUD.restaurant_id){
+      localStorage.setItem('ob-done','1');
+    }
+    initLoginScreen();
+  }).catch(()=>{
+    // Cloud failed — show onboarding for first time users
+    if(!isOnboardingDone()){
+      showOnboarding();
+    } else {
+      initLoginScreen();
+    }
+  });
+
+  // Show login immediately while cloud loads
+  try{showiOSInstallHint();}catch(e){}
 }
 
 function showOnboarding(){
