@@ -6,10 +6,12 @@
 <meta name="theme-color" content="#0A0A14">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="The Mind Ops">
-<meta name="description" content="The Mind Café — نظام إدارة العمليات">
+<meta name="apple-mobile-web-app-title" content="Food Ops">
+<meta name="description" content="Food Ops — نظام إدارة المطاعم">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230A0A14'/%3E%3Ctext y='75' x='10' font-size='75'%3E⚡%3C/text%3E%3C/svg%3E">
-<title>The Mind — نظام العمليات</title>
+<title>Food Ops — نظام إدارة المطاعم</title>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@400;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -378,25 +380,80 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--white);dire
 
 <!-- ═══ PLATFORM GATE — بوابة الوصول ═══ -->
 <div id="platform-gate" style="position:fixed;inset:0;background:#0A0805;z-index:20000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;">
-  <div style="text-align:center;margin-bottom:28px;">
+
+  <div style="text-align:center;margin-bottom:24px;">
     <div style="font-family:'Tajawal',sans-serif;font-size:32px;font-weight:900;color:#C9A84C;letter-spacing:4px;">FOOD OPS</div>
     <div style="font-size:9px;letter-spacing:5px;color:#555;font-family:monospace;margin-top:4px;">RESTAURANT MANAGEMENT PLATFORM</div>
   </div>
-  <div style="width:100%;max-width:340px;background:#161410;border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:24px;">
-    <div style="font-size:13px;color:#FAF7F0;margin-bottom:16px;text-align:center;">أدخل كود الوصول الخاص بمنشأتك</div>
-    <input id="platform-gate-input" type="password" placeholder="● ● ● ● ● ●"
-      maxlength="12"
-      style="width:100%;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:14px;font-family:monospace;font-size:22px;letter-spacing:8px;color:#FAF7F0;outline:none;text-align:center;box-sizing:border-box;margin-bottom:10px;"
-      onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='rgba(255,255,255,.1)'"
-      onkeydown="if(event.key==='Enter')checkPlatformGate()">
-    <div id="platform-gate-error" style="color:#FF3B5C;font-size:10px;text-align:center;margin-bottom:8px;display:none;">كود خاطئ — تواصل مع Food Ops</div>
-    <button onclick="checkPlatformGate()"
-      style="width:100%;background:#C9A84C;color:#000;border:none;border-radius:7px;padding:13px;font-family:'Cairo',sans-serif;font-weight:900;font-size:14px;cursor:pointer;">
-      دخول ←
-    </button>
-    <div style="text-align:center;margin-top:14px;font-size:9px;color:#555;">
-      للحصول على كود وصول: foodops159@gmail.com
+
+  <div style="width:100%;max-width:360px;background:#161410;border:1px solid rgba(201,168,76,.2);border-radius:14px;padding:28px;">
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:0;margin-bottom:20px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.08);">
+      <button id="tab-login" onclick="authTab('login')"
+        style="flex:1;padding:10px;background:rgba(201,168,76,.15);border:none;color:#C9A84C;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">
+        دخول
+      </button>
+      <button id="tab-signup" onclick="authTab('signup')"
+        style="flex:1;padding:10px;background:transparent;border:none;color:#555;font-family:'Cairo',sans-serif;font-size:13px;cursor:pointer;">
+        طلب اشتراك
+      </button>
     </div>
+
+    <!-- Login Form -->
+    <div id="auth-login-form">
+      <div style="margin-bottom:10px;">
+        <div style="font-size:10px;color:#888;margin-bottom:5px;">البريد الإلكتروني</div>
+        <input id="auth-email" type="email" placeholder="your@email.com" dir="ltr"
+          style="width:100%;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:11px;font-size:13px;color:#FAF7F0;outline:none;box-sizing:border-box;"
+          onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='rgba(255,255,255,.1)'"
+          onkeydown="if(event.key==='Enter')document.getElementById('auth-password').focus()">
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:10px;color:#888;margin-bottom:5px;">كلمة المرور</div>
+        <input id="auth-password" type="password" placeholder="••••••••"
+          style="width:100%;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:11px;font-size:13px;color:#FAF7F0;outline:none;box-sizing:border-box;"
+          onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='rgba(255,255,255,.1)'"
+          onkeydown="if(event.key==='Enter')supabaseLogin()">
+      </div>
+      <div id="auth-error" style="color:#FF3B5C;font-size:10px;text-align:center;margin-bottom:8px;display:none;"></div>
+      <button id="auth-login-btn" onclick="supabaseLogin()"
+        style="width:100%;background:#C9A84C;color:#000;border:none;border-radius:7px;padding:13px;font-family:'Cairo',sans-serif;font-weight:900;font-size:14px;cursor:pointer;">
+        دخول ←
+      </button>
+    </div>
+
+    <!-- Signup Form -->
+    <div id="auth-signup-form" style="display:none;">
+      <div style="margin-bottom:10px;">
+        <div style="font-size:10px;color:#888;margin-bottom:5px;">اسم المطعم / المنشأة *</div>
+        <input id="signup-restaurant" type="text" placeholder="مثال: The Mind Café"
+          style="width:100%;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:11px;font-size:13px;color:#FAF7F0;outline:none;box-sizing:border-box;"
+          onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:10px;color:#888;margin-bottom:5px;">البريد الإلكتروني *</div>
+        <input id="signup-email" type="email" placeholder="your@email.com" dir="ltr"
+          style="width:100%;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:11px;font-size:13px;color:#FAF7F0;outline:none;box-sizing:border-box;"
+          onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="font-size:10px;color:#888;margin-bottom:5px;">كلمة المرور *</div>
+        <input id="signup-password" type="password" placeholder="8 أحرف على الأقل"
+          style="width:100%;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:11px;font-size:13px;color:#FAF7F0;outline:none;box-sizing:border-box;"
+          onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+      </div>
+      <div id="signup-error" style="color:#FF3B5C;font-size:10px;text-align:center;margin-bottom:8px;display:none;"></div>
+      <div id="signup-success" style="color:#00D46A;font-size:10px;text-align:center;margin-bottom:8px;display:none;"></div>
+      <button id="auth-signup-btn" onclick="supabaseSignup()"
+        style="width:100%;background:#C9A84C;color:#000;border:none;border-radius:7px;padding:13px;font-family:'Cairo',sans-serif;font-weight:900;font-size:14px;cursor:pointer;">
+        📨 إرسال طلب الاشتراك
+      </button>
+      <div style="text-align:center;margin-top:10px;font-size:9px;color:#555;line-height:1.6;">
+        سيتم مراجعة طلبك وإشعارك خلال 24 ساعة
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -4728,57 +4785,99 @@ body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--white);dire
 
     <!-- DEVICES TAB -->
     <div id="central-tab-devices" style="display:none;">
-      <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
-        <button class="btn btn-gold" onclick="printAllKitchenDeviceQR()">🖨️ طباعة كل الباركودات</button>
-        <button class="btn btn-ghost" onclick="showAddKitchenDeviceForm()">➕ إضافة جهاز</button>
+
+      <!-- Header -->
+      <div style="background:linear-gradient(135deg,#060A14,#060610);border:1px solid rgba(77,158,255,.2);border-radius:10px;padding:12px;margin-bottom:10px;">
+        <div style="font-family:'Tajawal',sans-serif;font-size:14px;font-weight:900;color:var(--blue);margin-bottom:3px;">❄️ مراقبة أجهزة التبريد</div>
+        <div style="font-size:9px;color:var(--text);">تسجيل درجات الحرارة يدوياً مع إرفاق صورة الميزان</div>
       </div>
-      <!-- Add/Edit form -->
-      <div id="kitchen-device-form" style="display:none;" class="card" style="margin-bottom:8px;">
-        <div class="chdr"><span class="cico">❄️</span><div class="ctit" id="kdf-title">إضافة جهاز تبريد جديد</div></div>
-        <div class="cbdy">
-          <div class="g2" style="margin-bottom:8px;">
-            <div class="fi"><label>اسم الجهاز *</label>
-              <input id="kdf-name" placeholder="مثال: ثلاجة اللحوم — المطبخ المركزي"
-                style="background:var(--c2);border:1px solid var(--border);border-radius:5px;padding:8px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--white);outline:none;"></div>
-            <div class="fi"><label>الموقع</label>
-              <input id="kdf-location" placeholder="مثال: جانب الشوايات"
-                style="background:var(--c2);border:1px solid var(--border);border-radius:5px;padding:8px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--white);outline:none;"></div>
-            <div class="fi"><label>النوع</label>
-              <select id="kdf-type" onchange="setKitchenDeviceRange()" style="background:var(--c2);border:1px solid var(--border);border-radius:5px;padding:8px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--white);outline:none;">
-                <option value="fridge">🧊 ثلاجة (Fridge)</option>
-                <option value="freezer">❄️ فريزر (Freezer)</option>
-                <option value="walkin">🏠 غرفة باردة (Walk-in)</option>
-                <option value="blast">🌬️ بلاست شيلر (Blast Chiller)</option>
-                <option value="prep">🥗 ثلاجة تحضير (Prep Fridge)</option>
-                <option value="hot">🔥 تدفئة ساخنة (Hot Holding)</option>
-              </select></div>
-            <div class="fi"><label>يخزن</label>
-              <select id="kdf-stores" style="background:var(--c2);border:1px solid var(--border);border-radius:5px;padding:8px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--white);outline:none;">
-                <option>لحوم ودجاج</option><option>سمك ومأكولات بحرية</option>
-                <option>خضروات وفواكه</option><option>ألبان وجبن</option>
-                <option>صلصات ومطيبات</option><option>عجائن وخبز</option>
-                <option>حلويات وكريمات</option><option>مشروبات</option>
-                <option>متعدد</option>
-              </select></div>
-            <div class="fi"><label>الحد الأدنى للحرارة °C</label>
-              <input id="kdf-min" type="number" style="background:var(--c2);border:1px solid var(--border);border-radius:5px;padding:8px;font-family:var(--mono);font-size:14px;color:var(--white);outline:none;"></div>
-            <div class="fi"><label>الحد الأقصى للحرارة °C</label>
-              <input id="kdf-max" type="number" style="background:var(--c2);border:1px solid var(--border);border-radius:5px;padding:8px;font-family:var(--mono);font-size:14px;color:var(--white);outline:none;"></div>
-            <div class="fi"><label>CCP (نقطة تحكم حرجة)</label>
-              <select id="kdf-ccp" style="background:var(--c2);border:1px solid var(--border);border-radius:5px;padding:8px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--white);outline:none;">
-                <option value="true">✅ نعم — CCP</option>
-                <option value="false">ℹ️ لا — مراقبة عادية</option>
-              </select></div>
-          </div>
-          <div style="display:flex;gap:6px;">
-            <button class="btn btn-gold bfull" onclick="saveKitchenDevice()">💾 حفظ</button>
-            <button class="btn btn-ghost" onclick="document.getElementById('kitchen-device-form').style.display='none'">إلغاء</button>
-          </div>
+
+      <!-- Tabs: Admin Setup / Daily Log -->
+      <div class="subtabs" id="devices-subtabs" style="margin-bottom:10px;">
+        <button class="stab active" onclick="devicesSubTab('log',this)">🌡️ تسجيل يومي</button>
+        <button class="stab" onclick="devicesSubTab('history',this)">📋 السجل</button>
+        <button class="stab" onclick="devicesSubTab('setup',this)">⚙️ إعداد الأجهزة (مدير)</button>
+      </div>
+
+      <!-- LOG TAB -->
+      <div id="devices-tab-log">
+        <div id="devices-log-list"></div>
+        <div style="text-align:center;padding:10px;" id="devices-log-empty" style="display:none;">
+          <div style="color:var(--muted);font-size:10px;">لا توجد أجهزة — أضف من تبويب "إعداد الأجهزة"</div>
         </div>
       </div>
-      <!-- Device list -->
-      <div id="kitchen-devices-list"></div>
+
+      <!-- HISTORY TAB -->
+      <div id="devices-tab-history" style="display:none;">
+        <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;">
+          <input type="date" id="devices-hist-date" value=""
+            style="background:var(--c2);border:1px solid var(--border);border-radius:5px;padding:7px;font-family:var(--mono);font-size:11px;color:var(--white);outline:none;">
+          <button class="btn btn-ghost btn-sm" onclick="renderDevicesHistory()">🔍 عرض</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportDevicesCSV()">📥 CSV</button>
+        </div>
+        <div id="devices-history-list"></div>
+      </div>
+
+      <!-- SETUP TAB (Admin only) -->
+      <div id="devices-tab-setup" style="display:none;">
+        <div class="al b" style="margin-bottom:8px;">
+          <div class="al-i">🔐</div>
+          <div style="font-size:9px;">هذا القسم للمدير فقط — تحديد الأجهزة والحدود المسموحة</div>
+        </div>
+
+        <!-- Add device form -->
+        <div class="card" style="margin-bottom:8px;">
+          <div class="chdr"><span class="cico">➕</span><div class="ctit" id="kdf-title">إضافة جهاز تبريد</div></div>
+          <div class="cbdy">
+            <div class="g2" style="margin-bottom:8px;">
+              <div class="fi"><label>اسم الجهاز *</label>
+                <input id="kdf-name" placeholder="مثال: ثلاجة اللحوم"
+                  style="background:var(--c2);border:1px solid var(--border);border-radius:5px;padding:8px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--white);outline:none;"></div>
+              <div class="fi"><label>الموقع</label>
+                <input id="kdf-location" placeholder="مثال: جانب الشوايات"
+                  style="background:var(--c2);border:1px solid var(--border);border-radius:5px;padding:8px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--white);outline:none;"></div>
+              <div class="fi"><label>النوع</label>
+                <select id="kdf-type" onchange="setKitchenDeviceRange()" style="background:var(--c2);border:1px solid var(--border);border-radius:5px;padding:8px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--white);outline:none;">
+                  <option value="fridge">🧊 ثلاجة (Fridge)</option>
+                  <option value="freezer">❄️ فريزر (Freezer)</option>
+                  <option value="walkin">🏠 غرفة باردة (Walk-in)</option>
+                  <option value="blast">🌬️ بلاست شيلر (Blast Chiller)</option>
+                  <option value="prep">🥗 ثلاجة تحضير (Prep Fridge)</option>
+                  <option value="hot">🔥 تدفئة ساخنة (Hot Holding)</option>
+                </select></div>
+              <div class="fi"><label>يخزن</label>
+                <select id="kdf-stores" style="background:var(--c2);border:1px solid var(--border);border-radius:5px;padding:8px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--white);outline:none;">
+                  <option>لحوم ودجاج</option><option>سمك ومأكولات بحرية</option>
+                  <option>خضروات وفواكه</option><option>ألبان وجبن</option>
+                  <option>صلصات ومطيبات</option><option>عجائن وخبز</option>
+                  <option>حلويات وكريمات</option><option>مشروبات</option><option>متعدد</option>
+                </select></div>
+              <div class="fi"><label>🌡️ الحد الأدنى °C *</label>
+                <input id="kdf-min" type="number" placeholder="-25"
+                  style="background:var(--c2);border:1px solid var(--border);border-radius:5px;padding:8px;font-family:var(--mono);font-size:14px;color:var(--white);outline:none;"></div>
+              <div class="fi"><label>🌡️ الحد الأقصى °C *</label>
+                <input id="kdf-max" type="number" placeholder="4"
+                  style="background:var(--c2);border:1px solid var(--border);border-radius:5px;padding:8px;font-family:var(--mono);font-size:14px;color:var(--white);outline:none;"></div>
+              <div class="fi"><label>CCP (نقطة تحكم حرجة)</label>
+                <select id="kdf-ccp" style="background:var(--c2);border:1px solid var(--border);border-radius:5px;padding:8px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--white);outline:none;">
+                  <option value="true">✅ نعم — CCP</option>
+                  <option value="false">ℹ️ لا — مراقبة عادية</option>
+                </select></div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-gold bfull" onclick="saveKitchenDevice()">💾 حفظ</button>
+              <button class="btn btn-ghost" onclick="resetKitchenDeviceForm()">↺ تفريغ</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Devices list (admin) -->
+        <div id="kitchen-devices-list"></div>
+      </div>
+
     </div>
+
+
 
     <!-- PRODUCTION ORDER -->
     <div id="central-tab-production">
@@ -8540,99 +8639,9 @@ function loadCustomTemplateData(){
 
 
 const CLD={
-  kitch:[
-    {id:'km1',n:'صدور دجاج',h:'CCP',t:'≤4°C',w:2,al:true,u:'أصابع دجاج · جينكا · فاهيتا · سيزر · باستا · ستيك دجاج'},
-    {id:'km2',n:'لحم بقر — باتي',h:'CCP',t:'≤4°C',w:2,al:true,u:'كلاسك · تشيز · سموك هاوس · مايند بركر'},
-    {id:'km3',n:'لحم تندرلوين',h:'CCP',t:'≤4°C',w:2,al:true,u:'ستيك تندرلوين'},
-    {id:'km4',n:'بيكن بقري',h:'CCP',t:'≤4°C',w:3,al:true,u:'كلوب سانديش · طبق إنكليزي · إيغز بينيديكت · كالزوني البيكن'},
-    {id:'km5',n:'سموك تركي',h:'CP',t:'≤4°C',w:3,u:'كلوب سانديش'},
-    {id:'km6',n:'بيض طازج',h:'CCP',t:'≤4°C',w:7,al:true,u:'شكشوكة · أومليت · إيغز بينيديكت · طبق إنكليزي · مولتن كيك'},
-    {id:'km7',n:'هوت دوغ',h:'CP',t:'≤4°C',w:3,u:'طبق إنكليزي'},
-    {id:'km8',n:'خبز برغر (Bun)',h:'GMP',w:3,u:'كلاسك · تشيز · سموك هاوس'},
-    {id:'km9',n:'خبز بريوش',h:'GMP',w:2,u:'مايند بركر · إيغز بينيديكت'},
-    {id:'km10',n:'خبز باغيت',h:'GMP',w:1,al:true,u:'بروشكيتا · لبنة · شكشوكة · طبق إنكليزي'},
-    {id:'km11',n:'تورتيلا',h:'GMP',w:5,u:'فاهيتا دجاج'},
-    {id:'km12',n:'خبز تاكو صغير',h:'GMP',w:5,u:'تاكو (3 قطع)'},
-    {id:'km13',n:'خس آيس برج',h:'CCP',t:'≤4°C',w:2,al:true,u:'برغر · سيزر · كلوب سانديش · جينكا'},
-    {id:'km14',n:'طماطة طازجة',h:'CCP',t:'≤6°C',w:3,al:true,u:'برغر · سلطات · فتوش'},
-    {id:'km15',n:'بصل طازج',h:'GMP',w:7,u:'برغر · فاهيتا · شكشوكة'},
-    {id:'km16',n:'فلفل ملون',h:'GMP',w:5,u:'ريزو · فاهيتا · باستا'},
-    {id:'km17',n:'خيار طازج',h:'GMP',w:3,u:'فتوش · مايند سلطة'},
-    {id:'km18',n:'فطر طازج',h:'CP',w:3,al:true,u:'بيتزا فونجي · أومليت · طبق إنكليزي'},
-    {id:'km19',n:'فراولة طازجة (مطبخ)',h:'CCP',t:'≤4°C',w:2,al:true,u:'پانا كوتا'},
-    {id:'km20',n:'جبن شيدر شرائح',h:'CP',t:'≤4°C',w:7,u:'تشيز · سموك هاوس · فاهيتا · كلوب سانديش'},
-    {id:'km21',n:'موزاريلا',h:'CP',t:'≤4°C',w:5,u:'بيتزا · مايند بركر · أصابع موزاريلا'},
-    {id:'km22',n:'بارميزان معتق',h:'GMP',w:14,u:'سيزر · باستا · بروشكيتا'},
-    {id:'km23',n:'جبن فيتا',h:'CP',t:'≤4°C',w:7,u:'شكشوكة · مايند سلطة'},
-    {id:'km24',n:'بطاطا مجمدة',h:'GMP',t:'≤-18°C',w:0,u:'فرايز · كلوب سانديش'},
-    {id:'km25',n:'رقائق ناتشوز',h:'GMP',w:14,u:'ناجوز بالجبن'},
-    {id:'km26',n:'فاصولية حمراء',h:'GMP',w:30,u:'طبق إنكليزي'},
-    {id:'km27',n:'عجينة بيتزا',h:'CP',t:'≤4°C',w:1,al:true,u:'بيتزا عموم · كالزوني'},
-    {id:'km28',n:'صوص طماطة (بيتزا)',h:'CP',t:'≤4°C',w:3,u:'بيتزا'},
-    {id:'km29',n:'صوص بيستو',h:'CP',t:'≤4°C',w:5,u:'بيتزا بيستو · كالزوني'},
-    {id:'km30',n:'كريمة للطبخ',h:'CCP',t:'≤4°C',w:3,al:true,u:'ألفريدو · مايند باستا'},
-    {id:'km31',n:'معكرونة فيتوتشيني',h:'GMP',w:30,u:'مايند باستا · ألفريدو'},
-    {id:'km32',n:'زيت القلي',h:'CCP',w:0,u:'عموم قلي'},
-    {id:'km33',n:'Mise en Place — كامل',h:'CCP',w:0,u:'افتتاح الشفت'},
-  ],
-  bar:[
-    {id:'bm1',n:'حليب طازج',h:'CCP',t:'≤4°C',w:2,al:true,u:'قهوة · شوكولاتة ساخنة'},
-    {id:'bm2',n:'كريمة للقهوة',h:'CP',t:'≤4°C',w:3,u:'قهوة كريمية'},
-    {id:'bm3',n:'حبوب إسبريسو',h:'GMP',w:30,u:'قهوة عموم'},
-    {id:'bm4',n:'ثلج البار',h:'CCP',w:0,u:'مشروبات باردة'},
-    {id:'bm5',n:'نعناع طازج',h:'GMP',w:3,al:true,u:'موهيتو · مشروبات'},
-    {id:'bm6',n:'ليمون طازج',h:'GMP',w:5,u:'عصائر · موهيتو'},
-    {id:'bm7',n:'فراولة طازجة (بار)',h:'CCP',t:'≤4°C',w:2,al:true,u:'سموذي · مشروبات'},
-    {id:'bm8',n:'سيروب متنوع',h:'GMP',w:90,u:'مشروبات'},
-    {id:'bm9',n:'ماكينة إسبريسو — نظيفة',h:'CCP',w:0,u:'قهوة'},
-    {id:'bm10',n:'خلاط — نظيف',h:'GMP',w:0,u:'سموذي'},
-    {id:'bm11',n:'مياه معدنية — مخزون',h:'GMP',w:0,u:'عموم'},
-    {id:'bm12',n:'كاكاو للشوكولاتة',h:'GMP',w:30,u:'شوكولاتة ساخنة'},
-  ],
-  sweet:[
-    {id:'swm1',n:'كريم بروليه — رامكينات محضرة',h:'CCP',t:'≤4°C',w:1,al:true,u:'كريم بروليه'},
-    {id:'swm2',n:'تيراميسو — محضر مسبقاً',h:'CP',t:'≤4°C',w:1,al:true,u:'تيراميسو'},
-    {id:'swm3',n:'مولتن كيك — عجينة جاهزة',h:'CP',t:'≤4°C',w:1,al:true,u:'مولتن كيك'},
-    {id:'swm4',n:'كريمة لوتس',h:'GMP',w:7,u:'لوتس'},
-    {id:'swm5',n:'بسكويت لوتس',h:'GMP',w:30,u:'لوتس'},
-    {id:'swm6',n:'سان سيبستيان — كيكة',h:'CCP',t:'≤4°C',w:2,al:true,u:'سان سيبستيان'},
-    {id:'swm7',n:'پانا كوتا — محضرة',h:'CCP',t:'≤4°C',w:1,al:true,u:'پانا كوتا'},
-    {id:'swm8',n:'ماسكاربوني',h:'CCP',t:'≤4°C',w:3,al:true,u:'تيراميسو'},
-    {id:'swm9',n:'بسكويت سافويار',h:'GMP',w:30,u:'تيراميسو'},
-    {id:'swm10',n:'شوكولاتة داكنة 70٪',h:'CP',w:30,u:'مولتن كيك'},
-    {id:'swm11',n:'كريمة مخفوقة',h:'CCP',t:'≤4°C',w:2,al:true,u:'سويت عموم'},
-    {id:'swm12',n:'آيس كريم فانيلا',h:'CCP',t:'≤-18°C',w:0,u:'مولتن كيك'},
-    {id:'swm13',n:'شعلة كريم بروليه',h:'GMP',w:0,u:'كريم بروليه'},
-  ],
-  stor:[
-    {id:'stm1',n:'رز — مخزون',h:'GMP',w:0,u:'ريزو'},
-    {id:'stm2',n:'دقيق',h:'GMP',w:0,u:'بيتزا · سويت'},
-    {id:'stm3',n:'زيت زيتون',h:'GMP',w:0,u:'عموم'},
-    {id:'stm4',n:'زيت نباتي',h:'GMP',w:0,u:'قلي'},
-    {id:'stm5',n:'سكر',h:'GMP',w:0,u:'سويت'},
-    {id:'stm6',n:'زبدة',h:'CP',t:'≤4°C',w:14,u:'سويت · باستا'},
-    {id:'stm7',n:'بهارات وتوابل — صلاحية',h:'GMP',w:0,u:'عموم'},
-    {id:'stm8',n:'FIFO — الأقدم أمام',h:'GMP',w:0,u:'مبدأ التنظيم'},
-    {id:'stm9',n:'ملصقات تواريخ — مكتملة',h:'CCP',w:0,u:'كل الحاويات'},
-    {id:'stm10',n:'نظافة المخزن',h:'GMP',w:0,u:'سلامة غذائية'},
-  ],
-  hook:[
-    {id:'hm1',n:'رؤوس أراكيل — معقمة',h:'CCP',w:0,u:'عموم أراكيل'},
-    {id:'hm2',n:'خراطيم — مغسولة ومجففة',h:'CCP',w:0,u:'عموم أراكيل'},
-    {id:'hm3',n:'ماء أراكيل — تغيير يومي',h:'CCP',w:0,u:'عموم أراكيل'},
-    {id:'hm4',n:'فحم — جاف ونظيف',h:'GMP',w:0,u:'عموم أراكيل'},
-    {id:'hm5',n:'معسل — مخزون',h:'GMP',w:0,u:'عموم أراكيل'},
-    {id:'hm6',n:'منطقة التحضير — نظيفة',h:'GMP',w:0,u:'عموم أراكيل'},
-  ],
-  hall:[
-    {id:'hlm1',n:'طاولات — نظيفة ومرتبة',h:'GMP',w:0,u:'عموم'},
-    {id:'hlm2',n:'كاسات ماء — نظيفة شفافة',h:'CCP',w:0,u:'عموم'},
-    {id:'hlm3',n:'صحون وأدوات — نظيفة',h:'CCP',w:0,u:'عموم'},
-    {id:'hlm4',n:'حمامات — نظافة كاملة',h:'GMP',w:0,u:'عموم'},
-    {id:'hlm5',n:'إضاءة — تعمل بالكامل',h:'GMP',w:0,u:'عموم'},
-    {id:'hlm6',n:'منيو — نظيف وكامل',h:'GMP',w:0,u:'عموم'},
-    {id:'hlm7',n:'تكييف — درجة مناسبة',h:'GMP',w:0,u:'عموم'},
-  ]
+  kitch: JSON.parse(localStorage.getItem('tm-cld-kitch')||'[]'),
+  bar:   JSON.parse(localStorage.getItem('tm-cld-bar')||'[]'),
+  hall:  JSON.parse(localStorage.getItem('tm-cld-hall')||'[]'),
 };
 
 const CFG={email:'foodops159@gmail.com',wa:localStorage.getItem('brand-wa-num')||'9647885884074',w3:'f66b1fd9-b190-42be-ae7b-3bdde06c9835'};
@@ -9870,10 +9879,6 @@ function printReqArchive(){
 }
 
 let wmsFilterVal='';
-function saveWMS(){
-  localStorage.setItem('tm-wms-items',JSON.stringify(wmsItems));
-  cloudSync('wms_items', wmsItems);
-}
 function saveLedger(){
   localStorage.setItem('tm-wms-ledger',JSON.stringify(wmsLedger));
 }
@@ -12066,14 +12071,49 @@ let poCounter = parseInt(localStorage.getItem('tm-po-counter')||'1');
 let revTempPhotos=[], expTempPhotos=[], poTempPhotos=[], assetTempPhotos=[];
 
 // ── HELPERS ──
-function saveFin(key,data){ 
+// ── saveFin — Supabase First ──
+async function saveFin(key,data){
+  // Always save to localStorage as cache
   localStorage.setItem(key,JSON.stringify(data));
-  // Sync to Supabase
-  if(key==='tm-revenues') cloudSync('revenues', data);
-  if(key==='tm-expenses') cloudSync('expenses', data);
-  if(key==='tm-payorders') cloudSync('pay_orders', data);
-  if(key==='tm-dc') cloudSync('supplier_accounts', data);
+
+  if(!CLOUD.enabled||!CLOUD.restaurant_id) return;
+
+  const tableMap={
+    'tm-revenues':  'revenues',
+    'tm-expenses':  'expenses',
+    'tm-payorders': 'pay_orders',
+    'tm-dc':        'supplier_accounts',
+  };
+  const table=tableMap[key];
+  if(!table) return;
+
+  // Save changed records to Supabase
+  try{
+    const sb=getSB();if(!sb)return;
+    const rows=Array.isArray(data)?data:[data];
+    const withId=rows.map(r=>({...r,restaurant_id:CLOUD.restaurant_id}));
+    await sb.from(table).upsert(withId,{onConflict:'id'});
+  }catch(e){
+    console.warn('Supabase save failed:',e.message);
+  }
 }
+
+// ── saveHR — Supabase First ──
+
+// ── saveWMS — Supabase First ──
+async function saveWMS(){
+  localStorage.setItem('tm-wms',JSON.stringify(wmsItems));
+  if(!CLOUD.enabled||!CLOUD.restaurant_id) return;
+  try{
+    const sb=getSB();if(!sb)return;
+    const rows=wmsItems.map(r=>({...r,restaurant_id:CLOUD.restaurant_id}));
+    await sb.from('wms_items').upsert(rows,{onConflict:'id'});
+  }catch(e){console.warn('WMS save failed:',e.message);}
+}
+
+// ── loadAllFromCloud — Load on startup ──
+
+
 
 function addFinPhoto(input,containerId,arrName){
   const arr=arrName==='revTempPhotos'?revTempPhotos:arrName==='expTempPhotos'?expTempPhotos:arrName==='poTempPhotos'?poTempPhotos:assetTempPhotos;
@@ -12750,25 +12790,6 @@ async function initCloud(){
 }
 
 // ── Load all data from Supabase ──
-async function loadAllFromCloud(){
-  if(!CLOUD.enabled||!CLOUD.restaurant_id)return;
-  try{
-    const [revs,exps,emps,wms]=await Promise.all([
-      sbFetch(`revenues?restaurant_id=eq.${CLOUD.restaurant_id}&order=date.desc&limit=500`),
-      sbFetch(`expenses?restaurant_id=eq.${CLOUD.restaurant_id}&order=date.desc&limit=500`),
-      sbFetch(`employees?restaurant_id=eq.${CLOUD.restaurant_id}&is_active=eq.true`),
-      sbFetch(`wms_items?restaurant_id=eq.${CLOUD.restaurant_id}&is_active=eq.true`),
-    ]);
-    if(revs?.length) revenues=revs.map(r=>({...r,total:parseFloat(r.total)||0}));
-    if(exps?.length) expenses=exps.map(e=>({...e,amount:parseFloat(e.amount)||0}));
-    if(emps?.length) employees=emps;
-    if(wms?.length)  wmsItems=wms.map(i=>({...i,stock:parseFloat(i.stock)||0}));
-    saveFin('tm-revenues',revenues);
-    saveFin('tm-expenses',expenses);
-    saveHR();saveWMS();
-    console.log(`✅ Cloud loaded: ${revs?.length||0} revenues, ${emps?.length||0} employees`);
-  }catch(e){console.warn('Load from cloud failed:',e.message);}
-}
 
 async function saveToCloud(table,rows){
   if(!CLOUD.enabled||!CLOUD.restaurant_id)return;
@@ -18399,7 +18420,7 @@ function printCentralCL(){
 }
 
 // ═══════════════════════════════════════════════════
-// KITCHEN DEVICES — إدارة أجهزة التبريد بالباركود
+// KITCHEN DEVICES — تسجيل درجات الحرارة يدوياً
 // ═══════════════════════════════════════════════════
 let kitchenDevices = JSON.parse(localStorage.getItem('tm-kitchen-devices')||'null') || [
   {id:'kd1',name:'ثلاجة اللحوم الرئيسية',   type:'fridge', stores:'لحوم ودجاج',     min:-2, max:4,  ccp:true, location:'أمام الشوايات'},
@@ -18411,7 +18432,9 @@ let kitchenDevices = JSON.parse(localStorage.getItem('tm-kitchen-devices')||'nul
   {id:'kd7',name:'ثلاجة الحلويات',          type:'fridge', stores:'حلويات وكريمات', min:2,  max:6,  ccp:false,location:'قسم الحلويات'},
 ];
 let _editingKDId=null;
-function saveKitchenDevices(){ localStorage.setItem('tm-kitchen-devices',JSON.stringify(kitchenDevices)); }
+let _deviceTempLogs=JSON.parse(localStorage.getItem('tm-device-temp-logs')||'[]');
+function saveKitchenDevices(){localStorage.setItem('tm-kitchen-devices',JSON.stringify(kitchenDevices));}
+function saveDeviceTempLogs(){localStorage.setItem('tm-device-temp-logs',JSON.stringify(_deviceTempLogs.slice(-500)));}
 
 const KD_TYPE_DEFAULTS={
   fridge:  {min:-2,  max:4,   icon:'🧊'},
@@ -18423,6 +18446,22 @@ const KD_TYPE_DEFAULTS={
 };
 const KD_TYPE_LABELS={fridge:'ثلاجة',freezer:'فريزر',walkin:'غرفة باردة',blast:'بلاست شيلر',prep:'ثلاجة تحضير',hot:'تدفئة ساخنة'};
 
+function devicesSubTab(tab,btn){
+  ['log','history','setup'].forEach(t=>{
+    const el=document.getElementById('devices-tab-'+t);
+    if(el)el.style.display=t===tab?'':'none';
+  });
+  document.querySelectorAll('#devices-subtabs .stab').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  if(tab==='log')renderDevicesLogList();
+  if(tab==='history'){
+    const d=document.getElementById('devices-hist-date');
+    if(d&&!d.value)d.value=today();
+    renderDevicesHistory();
+  }
+  if(tab==='setup')renderKitchenDevices();
+}
+
 function setKitchenDeviceRange(){
   const type=document.getElementById('kdf-type')?.value;
   const d=KD_TYPE_DEFAULTS[type]||{};
@@ -18431,19 +18470,16 @@ function setKitchenDeviceRange(){
   if(m)m.value=d.min??'';if(x)x.value=d.max??'';
 }
 
-function showAddKitchenDeviceForm(){
+function resetKitchenDeviceForm(){
   _editingKDId=null;
-  const f=document.getElementById('kitchen-device-form');if(f)f.style.display='block';
-  document.getElementById('kdf-title').textContent='إضافة جهاز تبريد جديد';
+  document.getElementById('kdf-title').textContent='إضافة جهاز تبريد';
   ['kdf-name','kdf-location'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['kdf-min','kdf-max'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  f?.scrollIntoView({behavior:'smooth'});
 }
 
 function showEditKDForm(id){
   const dev=kitchenDevices.find(d=>d.id===id);if(!dev)return;
   _editingKDId=id;
-  const f=document.getElementById('kitchen-device-form');if(f)f.style.display='block';
   document.getElementById('kdf-title').textContent='تعديل: '+dev.name;
   document.getElementById('kdf-name').value=dev.name;
   document.getElementById('kdf-location').value=dev.location||'';
@@ -18452,7 +18488,9 @@ function showEditKDForm(id){
   document.getElementById('kdf-min').value=dev.min;
   document.getElementById('kdf-max').value=dev.max;
   document.getElementById('kdf-ccp').value=String(dev.ccp);
-  f?.scrollIntoView({behavior:'smooth'});
+  // Switch to setup tab
+  devicesSubTab('setup',document.querySelectorAll('#devices-subtabs .stab')[2]);
+  document.getElementById('devices-tab-setup').scrollIntoView({behavior:'smooth'});
 }
 
 function saveKitchenDevice(){
@@ -18465,19 +18503,19 @@ function saveKitchenDevice(){
   const ccp=document.getElementById('kdf-ccp')?.value==='true';
   if(!name){toast('أدخل اسم الجهاز','tr');return;}
   if(isNaN(min)||isNaN(max)){toast('أدخل نطاق الحرارة','tr');return;}
+  if(min>=max){toast('الحد الأدنى يجب أن يكون أقل من الأقصى','tr');return;}
   if(_editingKDId){
     const idx=kitchenDevices.findIndex(d=>d.id===_editingKDId);
     if(idx>=0)kitchenDevices[idx]={...kitchenDevices[idx],name,location,type,stores,min,max,ccp};
     toast('✅ تم التعديل','tg');
   } else {
-    const num=kitchenDevices.length+1;
-    const qrCode=`KD-${type.slice(0,3).toUpperCase()}-${String(num).padStart(2,'0')}-${Math.random().toString(36).slice(2,5).toUpperCase()}`;
-    kitchenDevices.push({id:'kd-'+Date.now(),name,location,type,stores,min,max,ccp,qrCode});
+    kitchenDevices.push({id:'kd-'+Date.now(),name,location,type,stores,min,max,ccp});
     toast('✅ تمت الإضافة','tg');
   }
   saveKitchenDevices();_editingKDId=null;
-  document.getElementById('kitchen-device-form').style.display='none';
-  renderKitchenDevices();SoundFX.play('success');
+  resetKitchenDeviceForm();
+  renderKitchenDevices();
+  SoundFX.play('success');
 }
 
 function deleteKitchenDevice(id){
@@ -18487,128 +18525,264 @@ function deleteKitchenDevice(id){
   saveKitchenDevices();renderKitchenDevices();toast('تم الحذف','ty');
 }
 
+// ── Render device list (admin setup) ──
 function renderKitchenDevices(){
   const el=document.getElementById('kitchen-devices-list');if(!el)return;
   if(!kitchenDevices.length){
-    el.innerHTML='<div style="text-align:center;padding:16px;color:var(--muted);font-size:10px;">لا توجد أجهزة — أضف جهازاً جديداً</div>';
+    el.innerHTML='<div style="text-align:center;padding:16px;color:var(--muted);font-size:10px;">لا توجد أجهزة — أضف جهازاً جديداً أعلاه</div>';
     return;
   }
   el.innerHTML=kitchenDevices.map(dev=>{
-    const code=dev.qrCode||dev.id;
-    const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(code)}&bgcolor=1a1a2e&color=4d9fff&qzone=1`;
-    const lastRead=tempReadings.flatMap(r=>r.readings||[]).filter(r=>r.eqId===dev.id).slice(-1)[0];
     const typeIcon=KD_TYPE_DEFAULTS[dev.type]?.icon||'❄️';
-    const tempColor=lastRead?(lastRead.val>=dev.min&&lastRead.val<=dev.max?'var(--green)':'var(--red)'):'var(--muted)';
-    return `<div style="background:var(--c2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;">
-      <div style="display:flex;gap:10px;margin-bottom:8px;">
-        <!-- QR Code -->
-        <div style="flex-shrink:0;">
-          <img src="${qrUrl}" width="80" height="80" style="border-radius:6px;border:2px solid rgba(77,158,255,.3);">
-          <div style="font-size:7px;color:var(--muted);text-align:center;margin-top:2px;font-family:var(--mono);">${code}</div>
+    const lastLog=_deviceTempLogs.filter(l=>l.devId===dev.id).slice(-1)[0];
+    const lastTemp=lastLog?.temp;
+    const tempOk=lastTemp!==undefined?(lastTemp>=dev.min&&lastTemp<=dev.max):null;
+    return `<div style="background:var(--c2);border:1px solid ${dev.ccp?'rgba(255,59,92,.2)':'var(--border)'};border-radius:10px;padding:12px;margin-bottom:6px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <span style="font-size:22px;">${typeIcon}</span>
+        <div style="flex:1;">
+          <div style="font-weight:700;font-size:12px;">${dev.name}</div>
+          <div style="font-size:9px;color:var(--text);">📍 ${dev.location||'—'} · 📦 ${dev.stores}</div>
+          <div style="font-size:9px;color:var(--blue);">🌡️ نطاق مسموح: ${dev.min}°C ← ${dev.max}°C</div>
+          ${dev.ccp?'<span style="font-size:8px;background:rgba(255,59,92,.1);color:var(--red);padding:1px 5px;border-radius:3px;display:inline-block;">⚠️ CCP</span>':''}
         </div>
-        <!-- Info -->
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:12px;margin-bottom:3px;">${typeIcon} ${dev.name}</div>
-          <div style="font-size:9px;color:var(--text);">📍 ${dev.location||'—'}</div>
-          <div style="font-size:9px;color:var(--text);">📦 ${dev.stores} · ${KD_TYPE_LABELS[dev.type]||dev.type}</div>
-          <div style="font-size:9px;color:var(--text);">🌡️ نطاق: ${dev.min}°C ← ${dev.max}°C</div>
-          ${dev.ccp?'<span style="font-size:8px;background:rgba(255,59,92,.1);color:var(--red);padding:1px 5px;border-radius:3px;margin-top:2px;display:inline-block;">⚠️ CCP</span>':''}
-        </div>
-        <!-- Last reading -->
-        <div style="text-align:center;flex-shrink:0;">
-          <div style="font-size:8px;color:var(--text);">آخر قراءة</div>
-          <div style="font-family:var(--mono);font-size:18px;font-weight:900;color:${tempColor};">${lastRead?lastRead.val+'°C':'—'}</div>
+        <div style="text-align:center;">
+          ${lastTemp!==undefined?`<div style="font-family:var(--mono);font-size:16px;font-weight:900;color:${tempOk?'var(--green)':'var(--red)'};">${lastTemp}°C</div><div style="font-size:7px;color:var(--muted);">${lastLog?.date||''} ${lastLog?.time||''}</div>`:'<div style="color:var(--muted);font-size:9px;">لا قراءات</div>'}
         </div>
       </div>
       <div style="display:flex;gap:5px;">
-        <button onclick="printSingleKitchenDeviceQR('${dev.id}')"
-          style="flex:1;background:rgba(77,158,255,.1);border:1px solid rgba(77,158,255,.3);border-radius:5px;padding:6px;font-size:10px;font-weight:700;color:var(--blue);cursor:pointer;">
-          🖨️ طباعة ملصق QR
-        </button>
         <button onclick="showEditKDForm('${dev.id}')"
-          style="background:rgba(255,212,38,.1);border:1px solid rgba(255,212,38,.3);border-radius:5px;padding:6px 10px;font-size:11px;cursor:pointer;color:var(--yellow);">✏️</button>
+          style="flex:1;background:rgba(255,212,38,.08);border:1px solid rgba(255,212,38,.2);border-radius:5px;padding:6px;font-size:10px;cursor:pointer;color:var(--yellow);">✏️ تعديل</button>
         <button onclick="deleteKitchenDevice('${dev.id}')"
-          style="background:rgba(255,59,92,.08);border:1px solid rgba(255,59,92,.2);border-radius:5px;padding:6px 10px;font-size:11px;cursor:pointer;color:var(--red);">🗑️</button>
+          style="background:rgba(255,59,92,.08);border:1px solid rgba(255,59,92,.2);border-radius:5px;padding:6px 12px;font-size:11px;cursor:pointer;color:var(--red);">🗑️</button>
       </div>
     </div>`;
   }).join('');
 }
 
-function printSingleKitchenDeviceQR(id){
-  const dev=kitchenDevices.find(d=>d.id===id);if(!dev)return;
-  const code=dev.qrCode||dev.id;
-  const qrBig=`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(code)}&bgcolor=ffffff&color=000000&qzone=2`;
-  const typeIcon=KD_TYPE_DEFAULTS[dev.type]?.icon||'❄️';
-  const html=`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>QR — ${dev.name}</title>
-  <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Arial',sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f5f5f5;}
-  .label{background:#fff;border:3px solid #000;border-radius:10px;padding:20px;width:270px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.15);}
-  .brand{font-size:10px;color:#888;letter-spacing:2px;}
-  img{border:2px solid #eee;border-radius:8px;margin:8px 0;}
-  .name{font-size:15px;font-weight:900;margin:6px 0 3px;}
-  .code{font-family:monospace;font-size:9px;color:#555;background:#f5f5f5;padding:3px 8px;border-radius:3px;display:inline-block;letter-spacing:2px;}
-  .info{font-size:10px;color:#777;line-height:1.7;margin:5px 0;}
-  .temp{font-size:14px;font-weight:700;color:#c0392b;margin:5px 0;}
-  .footer{font-size:8px;color:#aaa;margin-top:8px;border-top:1px solid #eee;padding-top:6px;}
-  .no-print{text-align:center;padding:14px;}
-  @media print{.no-print{display:none;}.label{box-shadow:none;}body{background:#fff;}}</style></head>
-  <body><div>
-    <div class="no-print">
-      <button onclick="window.print()" style="background:#1a7a3a;color:#fff;border:none;padding:10px 28px;border-radius:5px;font-size:14px;cursor:pointer;margin-left:8px;">🖨️ طباعة</button>
-      <button onclick="window.close()" style="background:#888;color:#fff;border:none;padding:10px 18px;border-radius:5px;font-size:14px;cursor:pointer;">✕</button>
-    </div>
-    <div class="label">
-      <div class="brand">${BRAND.name} · HACCP</div>
-      <img src="${qrBig}" width="220" height="220">
-      <div class="name">${typeIcon} ${dev.name}</div>
-      <div class="code">${code}</div>
-      <div class="info">📍 ${dev.location||'—'}<br>📦 ${dev.stores}</div>
-      <div class="temp">🌡️ ${dev.min}°C — ${dev.max}°C</div>
-      <div class="info">${dev.ccp?'⚠️ نقطة تحكم حرجة (CCP)':'ℹ️ مراقبة عادية'}</div>
-      <div class="footer">امسح QR لتسجيل درجة الحرارة · Food Ops HACCP</div>
-    </div>
-  </div></body></html>`;
-  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
-  const w=window.open(URL.createObjectURL(blob),'_blank');
-  setTimeout(()=>{if(w)w.print();},600);
-}
-
-function printAllKitchenDeviceQR(){
-  if(!kitchenDevices.length){toast('لا توجد أجهزة','tr');return;}
-  const labels=kitchenDevices.map(dev=>{
-    const code=dev.qrCode||dev.id;
-    const qrUrl=`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(code)}&bgcolor=ffffff&color=000000&qzone=1`;
+// ── Daily Log — تسجيل يدوي مع صورة ──
+function renderDevicesLogList(){
+  const el=document.getElementById('devices-log-list');if(!el)return;
+  if(!kitchenDevices.length){
+    el.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:10px;">لا توجد أجهزة — أضف من تبويب "إعداد الأجهزة"</div>';
+    return;
+  }
+  el.innerHTML=kitchenDevices.map(dev=>{
     const typeIcon=KD_TYPE_DEFAULTS[dev.type]?.icon||'❄️';
-    return `<div class="label">
-      <div class="brand">${BRAND.name}</div>
-      <img src="${qrUrl}" width="130" height="130">
-      <div class="name">${typeIcon} ${dev.name}</div>
-      <div class="code">${code}</div>
-      <div class="info">${dev.location||'—'} · ${dev.stores}</div>
-      <div class="temp">${dev.min}°C — ${dev.max}°C</div>
-      ${dev.ccp?'<div style="color:#c0392b;font-size:8px;font-weight:700;">CCP ⚠️</div>':''}
+    const todayLogs=_deviceTempLogs.filter(l=>l.devId===dev.id&&l.date===today());
+    const lastLog=todayLogs.slice(-1)[0];
+    const tempOk=lastLog?(lastLog.temp>=dev.min&&lastLog.temp<=dev.max):null;
+    return `<div class="card" style="margin-bottom:10px;border:1px solid ${tempOk===false?'rgba(255,59,92,.4)':dev.ccp?'rgba(255,59,92,.15)':'var(--border)'};">
+      <div class="chdr">
+        <span class="cico">${typeIcon}</span>
+        <div>
+          <div class="ctit">${dev.name}</div>
+          <div style="font-size:8px;color:var(--text);">📍 ${dev.location||'—'} · نطاق: ${dev.min}°C ← ${dev.max}°C ${dev.ccp?'· <span style="color:var(--red);">CCP</span>':''}</div>
+        </div>
+        <div class="crig">
+          ${lastLog?`<span style="font-family:var(--mono);font-size:13px;font-weight:900;color:${tempOk?'var(--green)':'var(--red)'};">${lastLog.temp}°C</span>
+          <span style="font-size:8px;color:var(--muted);margin-right:4px;">${lastLog.time}</span>`:'<span style="font-size:9px;color:var(--muted);">لم يُسجَّل اليوم</span>'}
+        </div>
+      </div>
+      <div class="cbdy" style="padding:10px;">
+        <!-- Input row -->
+        <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:8px;">
+          <div style="flex:1;">
+            <div style="font-size:9px;color:var(--text);margin-bottom:3px;">درجة الحرارة °C *</div>
+            <input type="number" id="temp-input-${dev.id}" placeholder="${dev.min} ← ${dev.max}"
+              step="0.1"
+              style="width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;padding:10px;font-family:var(--mono);font-size:16px;color:var(--white);outline:none;"
+              oninput="previewTempCheck('${dev.id}',${dev.min},${dev.max},this.value)">
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:9px;color:var(--text);margin-bottom:3px;">اسم المسجّل</div>
+            <input type="text" id="temp-logger-${dev.id}"
+              value="${currentUser?.name||''}"
+              placeholder="اسم الموظف"
+              style="width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;padding:10px;font-family:'Cairo',sans-serif;font-size:12px;color:var(--white);outline:none;">
+          </div>
+        </div>
+        <!-- Status preview -->
+        <div id="temp-status-${dev.id}" style="margin-bottom:8px;font-size:10px;font-weight:700;text-align:center;padding:5px;border-radius:5px;display:none;"></div>
+        <!-- Photo attach -->
+        <div style="margin-bottom:8px;">
+          <div style="font-size:9px;color:var(--text);margin-bottom:4px;">📷 صورة الميزان (اختياري)</div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <label style="cursor:pointer;background:rgba(77,158,255,.1);border:1px solid rgba(77,158,255,.2);border-radius:6px;padding:7px 12px;font-size:10px;color:var(--blue);">
+              📷 إرفاق صورة
+              <input type="file" accept="image/*" capture="environment" style="display:none;"
+                onchange="previewTempPhoto('${dev.id}',this)">
+            </label>
+            <div id="temp-photo-preview-${dev.id}" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+          </div>
+        </div>
+        <!-- Notes -->
+        <div style="margin-bottom:8px;">
+          <input type="text" id="temp-notes-${dev.id}" placeholder="ملاحظات (اختياري)"
+            style="width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:6px;padding:8px;font-family:'Cairo',sans-serif;font-size:11px;color:var(--white);outline:none;">
+        </div>
+        <!-- Save button -->
+        <button onclick="saveTempLog('${dev.id}',${dev.min},${dev.max})"
+          class="btn btn-gold bfull" style="padding:10px;">
+          ✅ تسجيل درجة الحرارة
+        </button>
+        <!-- Today's logs -->
+        ${todayLogs.length>0?`<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
+          <div style="font-size:9px;color:var(--text);margin-bottom:4px;">سجل اليوم (${todayLogs.length} قراءة)</div>
+          ${todayLogs.map(l=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:10px;border-bottom:1px solid rgba(255,255,255,.04);">
+            <span style="font-family:var(--mono);font-weight:700;color:${l.ok?'var(--green)':'var(--red)'};">${l.temp}°C</span>
+            <span style="color:var(--muted);">${l.time}</span>
+            <span style="color:var(--text);">👤 ${l.by||'—'}</span>
+            ${l.ok?'<span style="color:var(--green);font-size:9px;">✅ مقبول</span>':'<span style="color:var(--red);font-size:9px;">❌ خارج النطاق</span>'}
+            ${l.photo?`<img src="${l.photo}" style="width:24px;height:24px;object-fit:cover;border-radius:3px;cursor:pointer;" onclick="showFullPhoto('${l.photo}')">` :''}
+          </div>`).join('')}
+        </div>`:``}
+      </div>
     </div>`;
   }).join('');
-  const html=`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8"><title>ملصقات الأجهزة</title>
-  <style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:'Arial',sans-serif;padding:15px;background:#fff;}
-  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
-  .label{border:2px solid #000;border-radius:8px;padding:10px;text-align:center;break-inside:avoid;}
-  .brand{font-size:7px;color:#999;letter-spacing:1px;}
-  img{border:1px solid #eee;border-radius:4px;margin:4px 0;}
-  .name{font-size:11px;font-weight:900;margin:3px 0;}
-  .code{font-family:monospace;font-size:8px;color:#555;background:#f5f5f5;padding:2px 5px;border-radius:3px;}
-  .info{font-size:8px;color:#777;margin:2px 0;}
-  .temp{font-size:11px;font-weight:700;color:#c0392b;margin:3px 0;}
-  .no-print{text-align:center;padding:12px;margin-bottom:8px;}
-  @media print{.no-print{display:none;}@page{size:A4;margin:8mm;}.grid{gap:8px;}}</style></head>
-  <body>
-  <div class="no-print">
-    <button onclick="window.print()" style="background:#1a7a3a;color:#fff;border:none;padding:10px 26px;border-radius:5px;font-size:14px;cursor:pointer;">🖨️ طباعة الكل (${kitchenDevices.length} جهاز)</button>
-  </div>
-  <div class="grid">${labels}</div>
-  </body></html>`;
-  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
-  window.open(URL.createObjectURL(blob),'_blank');
 }
+
+let _tempPhotos={};
+function previewTempPhoto(devId,input){
+  if(!input.files?.[0])return;
+  const r=new FileReader();
+  r.onload=e=>{
+    _tempPhotos[devId]=e.target.result;
+    const prev=document.getElementById('temp-photo-preview-'+devId);
+    if(prev)prev.innerHTML=`<img src="${e.target.result}" style="width:48px;height:48px;object-fit:cover;border-radius:5px;border:1px solid var(--border);">
+      <button onclick="_tempPhotos['${devId}']=null;document.getElementById('temp-photo-preview-${devId}').innerHTML=''"
+        style="background:rgba(255,59,92,.2);border:none;color:var(--red);border-radius:3px;padding:0 5px;cursor:pointer;font-size:10px;align-self:flex-start;">✕</button>`;
+  };
+  r.readAsDataURL(input.files[0]);
+}
+
+function previewTempCheck(devId,min,max,val){
+  const statusEl=document.getElementById('temp-status-'+devId);if(!statusEl)return;
+  if(!val){statusEl.style.display='none';return;}
+  const temp=parseFloat(val);
+  if(isNaN(temp)){statusEl.style.display='none';return;}
+  const ok=temp>=min&&temp<=max;
+  statusEl.style.display='block';
+  statusEl.style.background=ok?'rgba(0,212,106,.1)':'rgba(255,59,92,.1)';
+  statusEl.style.color=ok?'var(--green)':'var(--red)';
+  statusEl.style.border=`1px solid ${ok?'rgba(0,212,106,.3)':'rgba(255,59,92,.3)'}`;
+  statusEl.textContent=ok?`✅ ضمن النطاق (${min}°C ← ${max}°C)`:`❌ خارج النطاق! المسموح: ${min}°C ← ${max}°C`;
+}
+
+function saveTempLog(devId,min,max){
+  const tempVal=document.getElementById('temp-input-'+devId)?.value;
+  const logger=document.getElementById('temp-logger-'+devId)?.value?.trim()||currentUser?.name||'—';
+  const notes=document.getElementById('temp-notes-'+devId)?.value?.trim()||'';
+  const photo=_tempPhotos[devId]||null;
+
+  if(!tempVal){toast('أدخل درجة الحرارة','tr');return;}
+  const temp=parseFloat(tempVal);
+  if(isNaN(temp)){toast('رقم غير صحيح','tr');return;}
+
+  const dev=kitchenDevices.find(d=>d.id===devId);if(!dev)return;
+  const ok=temp>=min&&temp<=max;
+  const now=new Date();
+  const time=now.toLocaleTimeString('ar-IQ',{hour:'2-digit',minute:'2-digit'});
+
+  const log={
+    id:Date.now(),devId,devName:dev.name,
+    temp,min,max,ok,
+    date:today(),time,
+    by:logger,notes,
+    photo:photo||null,
+    ccp:dev.ccp,
+    branch:getBranchTag()||'',
+  };
+
+  _deviceTempLogs.unshift(log);
+  saveDeviceTempLogs();
+
+  // Clear inputs
+  const inp=document.getElementById('temp-input-'+devId);if(inp)inp.value='';
+  const notesEl=document.getElementById('temp-notes-'+devId);if(notesEl)notesEl.value='';
+  const statusEl=document.getElementById('temp-status-'+devId);if(statusEl)statusEl.style.display='none';
+  const prevEl=document.getElementById('temp-photo-preview-'+devId);if(prevEl)prevEl.innerHTML='';
+  delete _tempPhotos[devId];
+
+  // Alert if out of range
+  if(!ok){
+    SoundFX.play('alert');
+    toast(`🚨 ${dev.name}: ${temp}°C خارج النطاق! (${min}°C ← ${max}°C)`,'tr');
+    // WhatsApp alert if CCP
+    if(dev.ccp&&CFG.wa){
+      const msg=`🚨 تنبيه HACCP — ${BRAND.name}\n❄️ ${dev.name}\n🌡️ ${temp}°C — خارج النطاق (${min}°C ← ${max}°C)\n👤 ${logger}\n📅 ${today()} ${time}`;
+      setTimeout(()=>window.open(`https://wa.me/${CFG.wa}?text=${encodeURIComponent(msg)}`)  ,500);
+    }
+  } else {
+    SoundFX.play('success');
+    toast(`✅ تم تسجيل ${temp}°C — ${dev.name}`,'tg');
+  }
+
+  renderDevicesLogList();
+  logAudit('TEMP_LOG',`${dev.name}: ${temp}°C by ${logger}`);
+}
+
+function renderDevicesHistory(){
+  const el=document.getElementById('devices-history-list');if(!el)return;
+  const date=document.getElementById('devices-hist-date')?.value||today();
+  const logs=_deviceTempLogs.filter(l=>l.date===date);
+
+  if(!logs.length){
+    el.innerHTML=`<div style="text-align:center;padding:16px;color:var(--muted);font-size:10px;">لا توجد سجلات في ${date}</div>`;
+    return;
+  }
+
+  // Group by device
+  const byDevice={};
+  logs.forEach(l=>{if(!byDevice[l.devId])byDevice[l.devId]={name:l.devName,logs:[]};byDevice[l.devId].logs.push(l);});
+
+  el.innerHTML=Object.values(byDevice).map(({name,logs})=>`
+    <div class="card" style="margin-bottom:8px;">
+      <div class="chdr">
+        <span class="cico">🌡️</span>
+        <div class="ctit">${name}</div>
+        <div class="crig">
+          <span style="font-size:9px;color:var(--text);">${logs.length} قراءة</span>
+          <span style="font-size:9px;margin-right:8px;color:${logs.some(l=>!l.ok)?'var(--red)':'var(--green)'};">${logs.some(l=>!l.ok)?'⚠️ خروج عن النطاق':'✅ ضمن النطاق'}</span>
+        </div>
+      </div>
+      <div class="cbdy" style="padding:0;">
+        ${logs.map(l=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid rgba(255,255,255,.04);">
+          <span style="font-family:var(--mono);font-size:15px;font-weight:900;color:${l.ok?'var(--green)':'var(--red)'};">${l.temp}°C</span>
+          <div style="flex:1;">
+            <div style="font-size:10px;">👤 ${l.by||'—'}</div>
+            <div style="font-size:8px;color:var(--muted);">${l.time}${l.notes?' · '+l.notes:''}</div>
+          </div>
+          ${l.photo?`<img src="${l.photo}" style="width:36px;height:36px;object-fit:cover;border-radius:5px;cursor:pointer;border:1px solid var(--border);" onclick="showFullPhoto('${l.photo}')">` :''}
+          <span style="font-size:9px;">${l.ok?'✅':'❌'}</span>
+        </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function exportDevicesCSV(){
+  const date=document.getElementById('devices-hist-date')?.value||today();
+  const logs=_deviceTempLogs.filter(l=>l.date===date);
+  if(!logs.length){toast('لا توجد بيانات','tr');return;}
+  let csv='التاريخ,الوقت,الجهاز,درجة الحرارة,الحد الأدنى,الحد الأقصى,الحالة,المسجّل,ملاحظات\n';
+  logs.forEach(l=>{
+    csv+=`${l.date},${l.time},"${l.devName}",${l.temp},${l.min},${l.max},${l.ok?'مقبول':'خارج النطاق'},"${l.by||'—'}","${l.notes||''}"\n`;
+  });
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`temp-log-${date}.csv`;a.click();
+  toast('📥 تم تصدير السجل','tg');
+}
+
+function showFullPhoto(src){
+  const d=document.createElement('div');
+  d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  d.onclick=()=>d.remove();
+  d.innerHTML=`<img src="${src}" style="max-width:90vw;max-height:90vh;border-radius:8px;">
+    <button onclick="this.parentElement.remove()" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer;">✕</button>`;
+  document.body.appendChild(d);
+}
+
+
 
 
 
@@ -18619,18 +18793,8 @@ let menuItems = JSON.parse(localStorage.getItem('tm-menu-items')||'[]');
 function saveMenuItems(){ localStorage.setItem('tm-menu-items',JSON.stringify(menuItems)); }
 
 function initMenuItems(){
-  if(menuItems.length) return;
-  menuItems=[
-    {id:'mi1',name:'برغر كلاسك',cat:'برغر',price:8000,cost:2800,sales:120,allergens:['غلوتين','ألبان','بيض']},
-    {id:'mi2',name:'تشيز برغر',cat:'برغر',price:9000,cost:3200,sales:95,allergens:['غلوتين','ألبان','بيض']},
-    {id:'mi3',name:'باستا ألفريدو',cat:'باستا',price:10000,cost:3500,sales:60,allergens:['غلوتين','ألبان','بيض']},
-    {id:'mi4',name:'بيتزا مارغريتا',cat:'بيتزا',price:12000,cost:4000,sales:85,allergens:['غلوتين','ألبان']},
-    {id:'mi5',name:'سيزر سلاد',cat:'سلطات',price:6000,cost:1800,sales:40,allergens:['بيض','سمك','ألبان']},
-    {id:'mi6',name:'كابتشينو',cat:'مشروبات',price:4000,cost:800,sales:200,allergens:['ألبان']},
-    {id:'mi7',name:'موهيتو',cat:'مشروبات',price:5000,cost:1200,sales:150,allergens:[]},
-    {id:'mi8',name:'پانا كوتا',cat:'حلويات',price:5000,cost:1500,sales:45,allergens:['ألبان','بيض']},
-  ];
-  saveMenuItems();
+  // لا بيانات افتراضية — يُحمَّل من القالب عند الإعداد
+  if(!menuItems.length) menuItems=[];
 }
 
 function menuEngTab(tab,btn){
@@ -19536,36 +19700,44 @@ function setBarcodeMode(mode){
 
 async function startBarcodeScanner(){
   try{
-    _barcodeStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    _barcodeStream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}
+    });
     const video=document.getElementById('bc-video');
     video.srcObject=_barcodeStream;
     await video.play();
     document.getElementById('bc-start-btn').style.display='none';
     document.getElementById('bc-stop-btn').style.display='flex';
-    document.getElementById('bc-status').textContent='جاري المسح...';
+    document.getElementById('bc-status').textContent='🔍 جاري المسح...';
 
-    // Use BarcodeDetector if available
-    if('BarcodeDetector' in window){
-      const detector=new BarcodeDetector({formats:['qr_code','ean_13','ean_8','code_128','code_39']});
-      const scanLoop=async()=>{
-        if(!_barcodeStream)return;
-        try{
-          const codes=await detector.detect(video);
-          if(codes.length>0){
-            processBarcodeInput(codes[0].rawValue);
-            stopBarcodeScanner();
-            return;
-          }
-        }catch(e){}
-        if(_barcodeStream)requestAnimationFrame(scanLoop);
-      };
-      scanLoop();
-    } else {
-      document.getElementById('bc-status').textContent='جاري المسح — BarcodeDetector غير مدعوم — استخدم الإدخال اليدوي';
-    }
+    // Use jsQR — works on ALL browsers including Safari/Firefox
+    const canvas=document.createElement('canvas');
+    const ctx=canvas.getContext('2d');
+
+    const scanLoop=()=>{
+      if(!_barcodeStream||video.readyState!==video.HAVE_ENOUGH_DATA){
+        if(_barcodeStream)requestAnimationFrame(scanLoop);return;
+      }
+      canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+      ctx.drawImage(video,0,0,canvas.width,canvas.height);
+      const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+
+      if(typeof jsQR!=='undefined'){
+        const code=jsQR(imageData.data,imageData.width,imageData.height,{inversionAttempts:'dontInvert'});
+        if(code){
+          processBarcodeInput(code.data);
+          stopBarcodeScanner();
+          return;
+        }
+      }
+      if(_barcodeStream)requestAnimationFrame(scanLoop);
+    };
+    requestAnimationFrame(scanLoop);
+
   }catch(err){
-    toast('لا يمكن الوصول للكاميرا: '+err.message,'tr');
-    document.getElementById('bc-status').textContent='❌ خطأ في الكاميرا';
+    const msg=err.name==='NotAllowedError'?'يجب السماح بالوصول للكاميرا':err.message;
+    toast('❌ '+msg,'tr');
+    document.getElementById('bc-status').textContent='❌ '+msg;
   }
 }
 
@@ -20081,98 +20253,95 @@ function deleteProdCatalogItemFromEditor(id){
   saveProdCatalog();
   renderProdCatalogEditor();
   SoundFX.play('click');
-}
-
-// ── Reset Onboarding ──
-function resetOnboarding(){
-  if(!confirm('⚠️ هذا سيمسح جميع بيانات النظام ويُعيد الإعداد الأولي.\n\nهل أنت متأكد؟'))return;
-  if(!confirm('تأكيد أخير — ستُفقد جميع البيانات. متأكد؟'))return;
-  localStorage.clear();
-  location.reload();
-}
-
 
 // ═══════════════════════════════════════════════════
-let _obType='مطعم';
-let _obColor='#C9A84C';
-let _obBranches=[{id:'b1',name:'الفرع الرئيسي'}];
-
-
+// SUPABASE AUTH
 // ═══════════════════════════════════════════════════
-// PLATFORM GATE — بوابة الوصول
-// ═══════════════════════════════════════════════════
-const PLATFORM_CODES=['FOODOPS2026','THEMIND2026','FOODOPS','ADMIN','MINDCAFE'];
-
-function isPlatformUnlocked(){
-  return localStorage.getItem('fo-platform-unlocked')==='1';
-}
-
-async function checkPlatformGate(){
-  const input=document.getElementById('platform-gate-input');
-  const code=input?.value?.trim().toUpperCase()||'';
-  const errEl=document.getElementById('platform-gate-error');
-  const btn=document.querySelector('#platform-gate button');
-
-  if(!code){toast('أدخل الكود','tr');return;}
-
-  // Show loading
-  if(btn){btn.textContent='⏳ جاري التحقق...';btn.disabled=true;}
-  if(errEl)errEl.style.display='none';
-
-  try{
-    // Check in Supabase subscriptions table
-    const res=await fetch(
-      `https://nhuxvfaxcfqlitkenewz.supabase.co/rest/v1/subscriptions?access_code=eq.${encodeURIComponent(code)}&select=id,restaurant_name,is_active,expires_at`,
-      {headers:{
-        'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5odXh2ZmF4Y2ZxbGl0a2VuZXd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2NjUyMzYsImV4cCI6MjA5NTI0MTIzNn0._AOYBpppVP-R-TAyab8wnNYFrcWYj5oMaEncvVstBQk',
-        'Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5odXh2ZmF4Y2ZxbGl0a2VuZXd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2NjUyMzYsImV4cCI6MjA5NTI0MTIzNn0._AOYBpppVP-R-TAyab8wnNYFrcWYj5oMaEncvVstBQk'
-      }}
+let _sbClient=null;
+function getSB(){
+  if(!_sbClient&&typeof supabase!=='undefined'){
+    _sbClient=supabase.createClient(
+      'https://nhuxvfaxcfqlitkenewz.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5odXh2ZmF4Y2ZxbGl0a2VuZXd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2NjUyMzYsImV4cCI6MjA5NTI0MTIzNn0._AOYBpppVP-R-TAyab8wnNYFrcWYj5oMaEncvVstBQk'
     );
-    const data=await res.json();
+  }
+  return _sbClient;
+}
 
-    if(!data||!data.length){
-      // Not in Supabase — check local fallback codes
-      if(PLATFORM_CODES.includes(code)){
-        unlockPlatform(code);return;
-      }
-      throw new Error('كود غير صحيح');
-    }
+function authTab(tab){
+  const loginF=document.getElementById('auth-login-form');
+  const signupF=document.getElementById('auth-signup-form');
+  const tabL=document.getElementById('tab-login');
+  const tabS=document.getElementById('tab-signup');
+  if(tab==='login'){
+    if(loginF)loginF.style.display='block';
+    if(signupF)signupF.style.display='none';
+    if(tabL){tabL.style.background='rgba(201,168,76,.15)';tabL.style.color='#C9A84C';}
+    if(tabS){tabS.style.background='transparent';tabS.style.color='#555';}
+  }else{
+    if(loginF)loginF.style.display='none';
+    if(signupF)signupF.style.display='block';
+    if(tabS){tabS.style.background='rgba(201,168,76,.15)';tabS.style.color='#C9A84C';}
+    if(tabL){tabL.style.background='transparent';tabL.style.color='#555';}
+  }
+}
 
-    const sub=data[0];
-
-    // Check active
-    if(!sub.is_active){
-      throw new Error('هذا الاشتراك موقوف — تواصل مع Food Ops');
-    }
-
-    // Check expiry
-    if(sub.expires_at && new Date(sub.expires_at)<new Date()){
-      throw new Error('انتهى الاشتراك — تواصل مع Food Ops للتجديد');
-    }
-
-    // All good — unlock
-    unlockPlatform(code,sub.restaurant_name);
-
+async function supabaseLogin(){
+  const email=document.getElementById('auth-email')?.value?.trim();
+  const password=document.getElementById('auth-password')?.value;
+  const errEl=document.getElementById('auth-error');
+  const btn=document.getElementById('auth-login-btn');
+  if(!email||!password){if(errEl){errEl.textContent='أدخل البريد وكلمة المرور';errEl.style.display='block';}return;}
+  if(btn){btn.textContent='⏳ جاري الدخول...';btn.disabled=true;}
+  if(errEl)errEl.style.display='none';
+  try{
+    const sb=getSB();if(!sb)throw new Error('Supabase not loaded');
+    const {data,error}=await sb.auth.signInWithPassword({email,password});
+    if(error)throw error;
+    const {data:ru,error:ruErr}=await sb
+      .from('restaurant_users')
+      .select('restaurant_id,restaurants(name,is_active)')
+      .eq('user_id',data.user.id)
+      .single();
+    if(ruErr||!ru){await sb.auth.signOut();throw new Error('حسابك غير مرتبط بمطعم — تواصل مع Food Ops');}
+    if(!ru.restaurants?.is_active){await sb.auth.signOut();throw new Error('حسابك قيد المراجعة — سيتم التواصل معك قريباً');}
+    CLOUD.restaurant_id=ru.restaurant_id;
+    CLOUD.enabled=true;
+    localStorage.setItem('fo-restaurant-id',ru.restaurant_id);
+    localStorage.setItem('fo-platform-unlocked','1');
+    if(ru.restaurants?.name)saveBrandKey('name',ru.restaurants.name);
+    const gate=document.getElementById('platform-gate');
+    if(gate){gate.style.opacity='0';gate.style.transition='opacity .3s';setTimeout(()=>{gate.style.display='none';startApp();},300);}
   }catch(err){
-    if(errEl){errEl.textContent=err.message||'كود خاطئ';errEl.style.display='block';}
-    if(input){input.value='';input.style.borderColor='#FF3B5C';setTimeout(()=>input.style.borderColor='rgba(255,255,255,.1)',1500);}
-    try{SoundFX.play('reject');}catch(e){}
-  }finally{
+    if(errEl){const msg=err.message.includes('Invalid login')?'بريد أو كلمة مرور خاطئة':err.message;errEl.textContent=msg;errEl.style.display='block';}
     if(btn){btn.textContent='دخول ←';btn.disabled=false;}
   }
 }
 
-function unlockPlatform(code,restaurantName){
-  localStorage.setItem('fo-platform-unlocked','1');
-  localStorage.setItem('fo-platform-unlocked-code',code);
-  if(restaurantName) saveBrandKey('name',restaurantName);
-  const gate=document.getElementById('platform-gate');
-  if(gate){
-    gate.style.opacity='0';
-    gate.style.transition='opacity .3s';
-    setTimeout(()=>{gate.style.display='none';startApp();},300);
+async function supabaseSignup(){
+  const restaurant=document.getElementById('signup-restaurant')?.value?.trim();
+  const email=document.getElementById('signup-email')?.value?.trim();
+  const password=document.getElementById('signup-password')?.value;
+  const errEl=document.getElementById('signup-error');
+  const successEl=document.getElementById('signup-success');
+  const btn=document.getElementById('auth-signup-btn');
+  if(!restaurant||!email||!password){if(errEl){errEl.textContent='أكمل جميع الحقول';errEl.style.display='block';}return;}
+  if(password.length<6){if(errEl){errEl.textContent='كلمة المرور 6 أحرف على الأقل';errEl.style.display='block';}return;}
+  if(btn){btn.textContent='⏳ جاري الإرسال...';btn.disabled=true;}
+  if(errEl)errEl.style.display='none';
+  try{
+    const sb=getSB();
+    const {data,error}=await sb.auth.signUp({email,password});
+    if(error)throw error;
+    await sb.from('signup_requests').insert({user_id:data.user?.id,email,restaurant_name:restaurant,restaurant_type:'مطعم',status:'pending'});
+    if(successEl){successEl.textContent='✅ تم إرسال طلبك — ستتلقى إشعاراً بعد موافقة الإدارة';successEl.style.display='block';}
+    if(btn){btn.textContent='✅ تم الإرسال';btn.disabled=true;}
+  }catch(err){
+    if(errEl){const msg=err.message.includes('already registered')?'هذا البريد مسجّل مسبقاً':err.message;errEl.textContent=msg;errEl.style.display='block';}
+    if(btn){btn.textContent='📨 إرسال طلب الاشتراك';btn.disabled=false;}
   }
 }
+
 
 function startApp(){
   try{applyBrand();}catch(e){}
@@ -20188,25 +20357,20 @@ function startApp(){
   try{OfflineManager.init();}catch(e){}
   try{initRandomTasks();}catch(e){}
 
-  // Init cloud — if cloud has data, skip onboarding for new users
-  initCloud().then(()=>{
-    try{applyBrand();}catch(e){}
-    // If cloud connected and brand loaded → mark onboarding done
-    if(CLOUD.enabled && CLOUD.restaurant_id){
-      localStorage.setItem('ob-done','1');
-    }
-    initLoginScreen();
-  }).catch(()=>{
-    // Cloud failed — show onboarding for first time users
-    if(!isOnboardingDone()){
-      showOnboarding();
-    } else {
-      initLoginScreen();
-    }
-  });
+  // Load data from Supabase if connected
+  if(CLOUD.enabled && CLOUD.restaurant_id){
+    loadAllFromCloud().then(()=>{
+      try{applyBrand();}catch(e){}
+      updateCloudIndicator();
+    }).catch(e=>console.warn('Cloud load failed:',e.message));
+  }
 
-  // Show login immediately while cloud loads
-  try{showiOSInstallHint();}catch(e){}
+  if(!isOnboardingDone()){
+    showOnboarding();
+  } else {
+    initLoginScreen();
+    try{showiOSInstallHint();}catch(e){}
+  }
 }
 
 function showOnboarding(){
@@ -22764,7 +22928,7 @@ function centralTab(tab,btn){
   if(tab==='cl')renderCentralCL();
   if(tab==='catalog')renderProdCatalog();
   if(tab==='production')loadTodayProduction();
-  if(tab==='devices')renderKitchenDevices();
+  if(tab==='devices'){renderDevicesLogList();}
 }
 
 function serviceTab(tab,btn){
@@ -26771,14 +26935,6 @@ let intelAlerts = [];
 
 // ── DATA AGGREGATION — pulls from existing modules ──
 
-function getDateRange(days){
-  const now=new Date();
-  const end=now.toISOString().split('T')[0];
-  const start=new Date(now-days*86400000).toISOString().split('T')[0];
-  const prevStart=new Date(now-days*2*86400000).toISOString().split('T')[0];
-  const prevEnd=start;
-  return {start,end,prevStart,prevEnd};
-}
 
 function getRevenueData(days){
   const {start,end,prevStart,prevEnd}=getDateRange(days);
@@ -26864,17 +27020,6 @@ function initIntel(){
   if(lu)lu.textContent=new Date().toLocaleTimeString('ar-IQ',{hour:'2-digit',minute:'2-digit',hour12:false});
 }
 
-function intelTab(tab,btn){
-  ['overview','trends','alerts','wms'].forEach(t=>{
-    const el=document.getElementById('intel-tab-'+t);
-    if(el)el.style.display=t===tab?'':'none';
-  });
-  document.querySelectorAll('#intel-tabs .stab').forEach(b=>b.classList.remove('active'));
-  if(btn)btn.classList.add('active');
-  if(tab==='trends')renderIntelTrends();
-  if(tab==='alerts')renderIntelAlerts();
-  if(tab==='wms')renderWMSIntel();
-}
 
 // ── SOURCES STATUS ──
 function renderIntelSources(){
@@ -28811,16 +28956,40 @@ updateRCStats();
   if(brandType) applyRestaurantTemplate(brandType);
   loadCustomTemplateData();
 
-  // ── Platform Gate ──
+  // ── Check Supabase session or show gate ──
   const _gate=document.getElementById('platform-gate');
-  if(isPlatformUnlocked()){
-    if(_gate)_gate.style.display='none';
-    startApp();
+  
+  // Try to restore session from Supabase
+  const sb=getSB();
+  if(sb){
+    sb.auth.getSession().then(({data:{session}})=>{
+      if(session){
+        // Has valid session — check restaurant
+        sb.from('restaurant_users')
+          .select('restaurant_id,restaurants(name,is_active)')
+          .eq('user_id',session.user.id)
+          .single()
+          .then(({data:ru})=>{
+            if(ru?.restaurants?.is_active){
+              CLOUD.restaurant_id=ru.restaurant_id;
+              CLOUD.enabled=true;
+              localStorage.setItem('fo-platform-unlocked','1');
+              if(ru.restaurants?.name)saveBrandKey('name',ru.restaurants.name);
+              if(_gate)_gate.style.display='none';
+              startApp();
+            } else {
+              if(_gate)_gate.style.display='flex';
+            }
+          }).catch(()=>{if(_gate)_gate.style.display='flex';});
+      } else {
+        // No session — show login gate
+        if(_gate)_gate.style.display='flex';
+        const _ls=document.getElementById('loginScreen');if(_ls)_ls.style.display='none';
+        const _ob=document.getElementById('onboarding-screen');if(_ob)_ob.style.display='none';
+      }
+    }).catch(()=>{if(_gate)_gate.style.display='flex';});
   } else {
     if(_gate)_gate.style.display='flex';
-    const _ls=document.getElementById('loginScreen');if(_ls)_ls.style.display='none';
-    const _ob=document.getElementById('onboarding-screen');if(_ob)_ob.style.display='none';
-    setTimeout(()=>document.getElementById('platform-gate-input')?.focus(),400);
   }
 })();
 
@@ -28860,7 +29029,7 @@ async function installPWA(){
 
 window.addEventListener('appinstalled',()=>{
   document.getElementById('pwa-install-btn')?.remove();
-  toast('✅ تم تثبيت The Mind Ops كتطبيق','tg');
+  toast('✅ تم تثبيت التطبيق على جهازك','tg');
 });
 
 // iOS install instructions
