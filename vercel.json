@@ -1,0 +1,9 @@
+{
+  "buildCommand": "next build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://nhuxvfaxcfqlitkenewz.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5odXh2ZmF4Y2ZxbGl0a2VuZXd6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2NjUyMzYsImV4cCI6MjA5NTI0MTIzNn0._AOYBpppVP-R-TAyab8wnNYFrcWYj5oMaEncvVstBQk"
+  }
+}
