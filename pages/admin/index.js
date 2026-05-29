@@ -64,7 +64,7 @@ export default function AdminPage({ session }) {
         .update({ status: 'approved' })
         .eq('id', req.id)
 
-      alert(`✅ تم تفعيل "${req.restaurant_name}"\nكود الوصول: ${code}`)
+      alert(`✅ تم تفعيل "${req.restaurant_name}"const msg = `مرحباً ${req.restaurant_name} 👋\n\nتم تفعيل اشتراككم في منصة Food Ops ✅\n\nرابط التطبيق:\nhttps://foodopsv3.vercel.app\n\nالبريد: ${req.email}\n\nللدعم: foodops159@gmail.com`; if (confirm('إرسال واتساب؟')) { window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank') }\nكود الوصول: ${code}`)
       loadData()
     } catch(e) {
       alert('خطأ: ' + e.message)
